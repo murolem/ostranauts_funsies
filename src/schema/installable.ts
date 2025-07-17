@@ -1,0 +1,31 @@
+import { z } from "zod";
+
+export const objSchema = z.object({
+  strName: z.string(),
+  strActionCO: z.string(),
+  strActionGroup: z.string(),
+  strTooltip: z.string(),
+  strInteractionTemplate: z.string(),
+  CTThem: z.string(),
+  aInputs: z.array(z.any()),
+  fTargetPointRange: z.number(),
+  fDuration: z.number(),
+  bSparks: z.boolean().optional(),
+  aToolCTsUse: z.array(z.any()).optional(),
+  aLootCOs: z.array(z.any()).optional(),
+  strStartInstall: z.string().optional(),
+  strBuildType: z.string().optional(),
+  strJobType: z.string(),
+  bNoJobMenu: z.boolean().optional(),
+  strAllowLootCTsUs: z.string(),
+  strAllowLootCTsThem: z.string(),
+  strProgressStat: z.string(),
+  strCTThemMultCondTools: z.string().optional(),
+  strCTThemMultCondUs: z.string(),
+  type: z.any(),
+  bHeadless: z.boolean().optional(),
+  aInverse: z.array(z.any()).optional(),
+  strLootOut: z.string().optional(),
+  CTTestUs: z.string().optional(),
+});
+export type module = z.infer<typeof objSchema>;
