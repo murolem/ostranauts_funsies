@@ -3,7 +3,7 @@ import { z } from "zod";
 export const cooverlaysSchema = z.array(
   z.object({
     strName: z.string(),
-    strNameFriendly: z.string(),
+    strNameFriendly: z.string().optional(),
     strDesc: z.string().optional(),
     strImg: z.string().optional(),
     strImgNorm: z.string().optional(),
@@ -16,6 +16,9 @@ export const cooverlaysSchema = z.array(
     strNameShort: z.string().optional(),
     aInteractionsReplace: z.array(z.string()).optional(),
     mapGUIPropMaps: z.array(z.string()).optional(),
+    strItemDef: z.string().optional(),
+    strDmgColor: z.string().optional(),
+    aDestSwaps: z.array(z.string()).optional(),
   }),
 );
 export type CooverlaysSchema = z.infer<typeof cooverlaysSchema>;

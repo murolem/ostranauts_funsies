@@ -1,5 +1,3 @@
-import { deepCloneObjectUsingJson } from '$utils/deepCloneObjectUsingJson';
-import { mergeJsonObjects } from '$utils/mergeJsonObjects';
 import { toOsPath } from '$utils/toOsPath';
 import fs from 'fs-extra';
 import { jsonSchemaToZod } from "json-schema-to-zod";
@@ -9,24 +7,70 @@ import { assertValueNotUndefinedPassthrough } from '$utils/assertValueNotUndefin
 import { ensureDirectoryExistsAndEmpty } from '$utils/ensureDirectoryExistsAndEmpty';
 import { Logger } from '$logger';
 import chalk from 'chalk';
+import path from 'path';
+import { readFilesRecursive } from '$utils/readFilesRecursive';
 const logger = new Logger("generate_schema");
 const { logDebug, logInfo, logWarn, logFatal } = logger;
 
 const args = process.argv.slice(2);
 const schemaName = assertValueNotUndefinedPassthrough(args[0]);
-const schemaFilepath = assertValueNotUndefinedPassthrough(args[1]);
+const dataPath = assertValueNotUndefinedPassthrough(args[1]);
 
 ensureDirectoryExistsAndEmpty('temp');
 
 const outputSchemaJsonFilepath = toOsPath(`temp/schema_${schemaName}_json.json`);
 const outputSchemaZodFilepath = toOsPath(`temp/schema_${schemaName}_zod.ts`);
 const outputSchemaZodFilepath2 = toOsPath(`src/schema/${schemaName}.ts`);
-if (!fs.existsSync(schemaFilepath)) {
-    throw new Error("no schema found at: " + schemaFilepath);
+if (!fs.existsSync(dataPath)) {
+    throw new Error("data path not found: " + dataPath);
 }
 
-logInfo(chalk.bold("loading data from:\n") + schemaFilepath)
-const data = fs.readJsonSync(schemaFilepath);
+const dataFilepaths: string[] = [];
+if (fs.statSync(dataPath).isDirectory()) {
+    logInfo(`${chalk.bold("DIRECTORY")} loading mode`);
+
+    dataFilepaths.push(
+        ...readFilesRecursive(dataPath)
+            .filter(p => p.toLocaleLowerCase().endsWith('.json'))
+            .map(p => path.join(dataPath, p))
+    );
+} else {
+    logInfo(`${chalk.bold("FILE")} loading mode`);
+
+    dataFilepaths.push(dataPath);
+}
+
+if (dataFilepaths.length === 0) {
+    logFatal({ msg: "found no datapaths to loads", throw: true });
+}
+
+let data: unknown[] = [];
+for (const filepath of dataFilepaths) {
+    logInfo("loading: " + filepath);
+
+    const loaded = fs.readJsonSync(filepath);
+    if (!Array.isArray(loaded)) {
+        logFatal({
+            msg: "encountered a JSON file that contains something other than an array. found type: " + typeof loaded,
+            throw: true,
+            data: {
+                relFilepath: filepath,
+                filepath
+            }
+        });
+        throw ''//type guard
+    }
+
+    data.push(loaded);
+}
+
+if (data.length === 0) {
+    logFatal({ msg: "no data loaded", throw: true });
+}
+
+data = data.flat();
+
+// ========================
 
 const jsonSchema = createJsonSchema(data);
 fs.writeJsonSync(outputSchemaJsonFilepath, jsonSchema, { spaces: 4 });
