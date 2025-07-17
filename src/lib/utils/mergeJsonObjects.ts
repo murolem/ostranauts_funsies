@@ -1,4 +1,4 @@
-import { Logger } from '$src/utils/logger';
+import { Logger } from '$logger';
 import { deepCloneObjectUsingJson } from './deepCloneObjectUsingJson';
 
 const logger = new Logger("utils/mergeJsonObjects");

@@ -1,14 +1,35 @@
 import fs from 'fs-extra';
-import { z } from 'zod';
-import { objSchema as installableSchema } from './schema/installable';
-import { getObjPropOrCreate } from '$src/utils/getObjPropOrCreate';
+import { unknown, z } from 'zod';
+import path from 'path';
+import { getObjPropOrCreate } from '$utils/getObjPropOrCreate';
+import { toOsPath } from '$utils/toOsPath';
+import { readFilesRecursive } from '$utils/readFilesRecursive';
+import { loadJsonFilesRecursiveWithSchema } from '$utils/loadJsonFilesRecursive';
+import { cooverlaysSchema } from '$src/schema/cooverlays';
+import { installablesSchema } from '$src/schema/installables';
 
-type InstallableSchema = z.infer<typeof installableSchema>;
+const gameAssetsPath = "/home/aliser/.var/app/com.valvesoftware.Steam/.local/share/Steam/steamapps/common/Ostranauts/Ostranauts_Data/StreamingAssets/";
+const installablesFilepath = toOsPath(`${gameAssetsPath}/data/installables/installables.json`);
+const cooverlaysDirpath = toOsPath(`${gameAssetsPath}/data/cooverlays`);
 
-const installables_json_path = "/home/aliser/.var/app/com.valvesoftware.Steam/.local/share/Steam/steamapps/common/Ostranauts/Ostranauts_Data/StreamingAssets/data/installables/installables.json";
+const pathsToValidate = [
+    installablesFilepath,
+    cooverlaysDirpath
+];
+pathsToValidate.forEach((path, i) => {
+    if (!fs.existsSync(path)) {
+        throw new Error(`path doesn't exist (index ${i}): ` + path);
+    }
+});
 
-const installables = installableSchema.array()
-    .parse(fs.readJsonSync(installables_json_path));
+const entities = [
+    ...loadJsonFilesRecursiveWithSchema(cooverlaysDirpath, cooverlaysSchema).map(e => e.parsed)
+].flat();
+
+// ===========================
+
+const installables = installablesSchema
+    .parse(fs.readJsonSync(installablesFilepath));
 
 const installablesByBuildCat = installables.reduce<Record<string, any[]>>((acc, e) => {
     let buildType = e.strBuildType;
@@ -17,7 +38,16 @@ const installablesByBuildCat = installables.reduce<Record<string, any[]>>((acc, 
     }
 
     const installablesByBuildType = getObjPropOrCreate(acc, buildType, () => []);
-    installablesByBuildType.push(e.strName);
+
+    const installableId = e.strName;
+    const itemId = e.strActionCO;
+    const item = entities.find(e => e.strName === itemId);
+    const itemNameFriendly = item?.strNameFriendly ?? "<item not found>";
+    installablesByBuildType.push([
+        installableId,
+        itemId,
+        itemNameFriendly
+    ]);
 
     return acc;
 }, {});

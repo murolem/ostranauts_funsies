@@ -4,7 +4,8 @@
   "description": "",
   "main": "extract_installables.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "generate-schema": "tsx src/generate_schema.ts"
   },
   "keywords": [],
   "author": "",
@@ -13,10 +14,12 @@
   "dependencies": {
     "chalk": "^5.4.1",
     "fs-extra": "^11.3.0",
+    "genson-js": "^0.0.8",
     "json-schema-to-zod": "^2.6.1",
     "prettier": "^3.6.2",
     "typescript": "^5.8.3",
-    "zod": "^4.0.5"
+    "zod": "^4.0.5",
+    "zod-validation-error": "^3.5.3"
   },
   "devDependencies": {
     "@types/fs-extra": "^11.0.4"
