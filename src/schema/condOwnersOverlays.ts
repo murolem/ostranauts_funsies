@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const cooverlaysSchema = z.array(
+export const condOwnersOverlaysSchema = z.array(
   z.object({
     strName: z.string(),
     strNameFriendly: z.string().optional(),
@@ -21,4 +21,4 @@ export const cooverlaysSchema = z.array(
     aDestSwaps: z.array(z.string()).optional(),
   }),
 );
-export type CooverlaysSchema = z.infer<typeof cooverlaysSchema>;
+export type CondOwnersOverlaysSchema = z.infer<typeof condOwnersOverlaysSchema>;

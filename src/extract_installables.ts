@@ -2,9 +2,9 @@ import fs from 'fs-extra';
 import { getObjPropOrCreate } from '$utils/getObjPropOrCreate';
 import { toOsPath } from '$utils/toOsPath';
 import { loadJsonFilesRecursiveWithSchema } from '$utils/loadJsonFilesRecursive';
-import { cooverlaysSchema } from '$src/schema/cooverlays';
+import { condOwnersOverlaysSchema } from '$schema/condOwnersOverlays';
 import { installablesSchema } from '$src/schema/installables';
-import { condownersSchema } from '$src/schema/condowners';
+import { condOwnersSchema } from '$schema/condOwners';
 import { tsvFormat } from 'd3-dsv';
 
 const gameAssetsPath = "/home/aliser/.var/app/com.valvesoftware.Steam/.local/share/Steam/steamapps/common/Ostranauts/Ostranauts_Data/StreamingAssets/";
@@ -23,8 +23,8 @@ pathsToValidate.forEach((path, i) => {
 });
 
 const entities = [
-    ...loadJsonFilesRecursiveWithSchema(condownersDirpath, condownersSchema).map(e => e.parsed),
-    ...loadJsonFilesRecursiveWithSchema(cooverlaysDirpath, cooverlaysSchema).map(e => e.parsed),
+    ...loadJsonFilesRecursiveWithSchema(condownersDirpath, condOwnersSchema).map(e => e.parsed),
+    ...loadJsonFilesRecursiveWithSchema(cooverlaysDirpath, condOwnersOverlaysSchema).map(e => e.parsed),
 ].flat();
 
 // ===========================

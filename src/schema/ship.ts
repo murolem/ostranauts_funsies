@@ -4,9 +4,13 @@ export const itemIdSchema = z.string();
 
 export const itemSchema = z.object({
   strName: itemIdSchema,
+  /** Signed float X position. */
   fX: z.number(),
+  /** Signed float Y position. */
   fY: z.number(),
+  /** rotation in degrees */
   fRotation: z.number().int(),
+  /** UUID of some kind.  */
   strID: z.string(),
   bForceLoad: z.boolean().optional(),
   aGPMSettings: z
@@ -109,86 +113,84 @@ export const constructionTemplateSchema = z.object({
   ),
 });
 
-export const shipSchema = z.array(
-  z.object({
-    strName: itemIdSchema,
-    strRegID: z.string(),
-    nCurrentWaypoint: z.number().int(),
-    fTimeEngaged: z.number(),
-    fWearManeuver: z.number().int(),
-    fWearAccrued: z.number().int(),
-    aItems: z.array(
-      itemSchema
-    ),
-    vShipPos: z.object({ x: z.number().int(), y: z.number().int() }),
-    objSS: shipInitialPositionSchema,
-    aRooms: z.array(
-      roomSchema
-    ),
-    DMGStatus: z.number().int(),
-    fLastVisit: z.number().int(),
-    fAIDockingTimer: z.number().int().optional(),
-    fAIPauseTimer: z.number().int(),
-    bPrefill: z.boolean(),
-    bNoCollisions: z.boolean(),
-    dLastScanTime: z.number().int(),
-    bLocalAuthority: z.boolean(),
-    bAIShip: z.boolean(),
-    make: z.string(),
-    model: z.string(),
-    year: z.string(),
-    origin: z.string(),
-    description: z.string(),
-    designation: z.string(),
-    publicName: z.string(),
-    dimensions: z.string(),
-    fShallowMass: z.number(),
-    fShallowRCSRemass: z.number(),
-    fShallowRCSRemassMax: z.number(),
-    fShallowFusionRemain: z.number(),
-    fBreakInMultiplier: z.number().int(),
-    nRCSCount: z.number().int(),
-    nRCSDistroCount: z.number().int(),
-    nDockCount: z.number().int(),
-    bFusionTorch: z.boolean(),
-    bXPDRAntenna: z.boolean(),
-    bShipHidden: z.boolean(),
-    nO2PumpCount: z.number().int(),
-    shipCO: shipCondownerSchema.optional(),
-    fAIDockingExpire: z.number().int().optional(),
-    fLastQuotedPrice: z.number().int().optional(),
-    commData: z.object({
-      dClearanceRequestTime: z.number().int(),
-      dClearanceIssueTimestamp: z.number().int(),
-      bClearanceSquawkID: z.boolean(),
-    }).optional(),
-    aShallowPSpecs: z.array(
-      itemSchema
-    ).optional(),
-    fFirstVisit: z.number().int().optional(),
-    bBreakInUsed: z.boolean().optional(),
-    fFusionThrustMax: z.number().optional(),
-    fFusionPelletMax: z.number().int().optional(),
-    fEpochNextGrav: z.number().optional(),
-    fShallowRotorStrength: z.number().int().optional(),
-    fAeroCoefficient: z.number().int().optional(),
-    bIsUnderConstruction: z.boolean().optional(),
-    ShipType: z.number().int().optional(),
-    nConstructionProgress: z.number().int().optional(),
-    nInitConstructionProgress: z.number().int().optional(),
-    strXPDR: z.string().optional(),
-    aZones: z.array(
-      zoneSchema
-    ).optional(),
-    aConstructionTemplates: z.array(
-      constructionTemplateSchema
-    ).optional(),
-    strTemplateName: z.string().optional(),
-    aMarketConfigs: z.record(z.string(), itemIdSchema).optional(),
-    aBGXs: z.array(z.array(z.number())).optional(),
-    aBGYs: z.array(z.array(z.number())).optional(),
-    aBGNames: z.array(z.string()).optional(),
-    strLaw: z.string().optional(),
-  }),
-);
+export const shipSchema = z.object({
+  strName: itemIdSchema,
+  strRegID: z.string(),
+  nCurrentWaypoint: z.number().int(),
+  fTimeEngaged: z.number(),
+  fWearManeuver: z.number().int(),
+  fWearAccrued: z.number().int(),
+  aItems: z.array(
+    itemSchema
+  ),
+  vShipPos: z.object({ x: z.number().int(), y: z.number().int() }),
+  objSS: shipInitialPositionSchema,
+  aRooms: z.array(
+    roomSchema
+  ),
+  DMGStatus: z.number().int(),
+  fLastVisit: z.number().int(),
+  fAIDockingTimer: z.number().int().optional(),
+  fAIPauseTimer: z.number().int(),
+  bPrefill: z.boolean(),
+  bNoCollisions: z.boolean(),
+  dLastScanTime: z.number().int(),
+  bLocalAuthority: z.boolean(),
+  bAIShip: z.boolean(),
+  make: z.string(),
+  model: z.string(),
+  year: z.string(),
+  origin: z.string(),
+  description: z.string(),
+  designation: z.string(),
+  publicName: z.string(),
+  dimensions: z.string(),
+  fShallowMass: z.number(),
+  fShallowRCSRemass: z.number(),
+  fShallowRCSRemassMax: z.number(),
+  fShallowFusionRemain: z.number(),
+  fBreakInMultiplier: z.number().int(),
+  nRCSCount: z.number().int(),
+  nRCSDistroCount: z.number().int(),
+  nDockCount: z.number().int(),
+  bFusionTorch: z.boolean(),
+  bXPDRAntenna: z.boolean(),
+  bShipHidden: z.boolean(),
+  nO2PumpCount: z.number().int(),
+  shipCO: shipCondownerSchema.optional(),
+  fAIDockingExpire: z.number().int().optional(),
+  fLastQuotedPrice: z.number().int().optional(),
+  commData: z.object({
+    dClearanceRequestTime: z.number().int(),
+    dClearanceIssueTimestamp: z.number().int(),
+    bClearanceSquawkID: z.boolean(),
+  }).optional(),
+  aShallowPSpecs: z.array(
+    itemSchema
+  ).optional(),
+  fFirstVisit: z.number().int().optional(),
+  bBreakInUsed: z.boolean().optional(),
+  fFusionThrustMax: z.number().optional(),
+  fFusionPelletMax: z.number().int().optional(),
+  fEpochNextGrav: z.number().optional(),
+  fShallowRotorStrength: z.number().int().optional(),
+  fAeroCoefficient: z.number().int().optional(),
+  bIsUnderConstruction: z.boolean().optional(),
+  ShipType: z.number().int().optional(),
+  nConstructionProgress: z.number().int().optional(),
+  nInitConstructionProgress: z.number().int().optional(),
+  strXPDR: z.string().optional(),
+  aZones: z.array(
+    zoneSchema
+  ).optional(),
+  aConstructionTemplates: z.array(
+    constructionTemplateSchema
+  ).optional(),
+  strTemplateName: z.string().optional(),
+  aMarketConfigs: z.record(z.string(), itemIdSchema).optional(),
+  aBGXs: z.array(z.array(z.number())).optional(),
+  aBGYs: z.array(z.array(z.number())).optional(),
+  aBGNames: z.array(z.string()).optional(),
+  strLaw: z.string().optional(),
+});
 export type ShipSchema = z.infer<typeof shipSchema>;

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const condownersSchema = z.array(
+export const condOwnersSchema = z.array(
   z.object({
     strName: z.string(),
     strItemDef: z.string(),
@@ -36,4 +36,4 @@ export const condownersSchema = z.array(
     aComponents: z.array(z.string()).optional(),
   }),
 );
-export type CondownersSchema = z.infer<typeof condownersSchema>;
+export type CondOwnersSchema = z.infer<typeof condOwnersSchema>;
