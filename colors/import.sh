@@ -1,0 +1,1 @@
+cp "/home/aliser/.var/app/com.valvesoftware.Steam/.local/share/Steam/steamapps/common/Ostranauts/Ostranauts_Data/StreamingAssets/data/colors/colors.json" "colors/colors.json"

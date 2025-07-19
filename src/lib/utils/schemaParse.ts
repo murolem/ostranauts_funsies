@@ -19,12 +19,13 @@ export function schemaParse<T extends ZodType>(schema: T, data: unknown): z.infe
         return schema.parse(data);
     } catch (err) {
         if (err instanceof ZodError) {
-            logFatal({
-                msg: err.message,
-                throw: true,
-                stringifyData: true,
-                data
-            });
+            throw err;
+            // logFatal({
+            //     msg: err.message,
+            //     throw: true,
+            //     stringifyData: true,
+            //     data
+            // });
         } else {
             logFatal({
                 msg: "unknown error while parsing",

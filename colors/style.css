@@ -1,0 +1,38 @@
+body {
+    background-color: hsl(0, 0%, 15%);
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.grid {
+    --tile-size: 10rem;
+
+    display: grid;
+    grid-template-columns: repeat(10, var(--tile-size));
+}
+
+.tile {
+    display: flex;
+
+    height: var(--tile-size);
+
+    justify-content: center;
+    align-items: center;
+
+    font-family: sans-serif;
+    word-break: break-all;
+    font-size: small;
+
+    padding: 0.5rem;
+    text-align: center;
+}
+
+.tile.perceived-light {
+    color: black;
+}
+
+.tile.perceived-dark {
+    color: white;
+}
