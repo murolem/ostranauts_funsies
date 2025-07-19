@@ -1,8 +1,10 @@
 import { z } from "zod";
 
+export const itemIdSchema = z.string();
+
 export const itemsSchema = z.array(
   z.object({
-    strName: z.string(),
+    strName: itemIdSchema,
     strImg: z.string(),
     strImgNorm: z.string(),
     strImgDamaged: z.string().optional(),

@@ -1,8 +1,7 @@
+import { itemIdSchema } from '$schema/items';
 import { z } from "zod";
 
-export const itemIdSchema = z.string();
-
-export const itemSchema = z.object({
+export const shipItemSchema = z.object({
   strName: itemIdSchema,
   /** Signed float X position. */
   fX: z.number(),
@@ -25,7 +24,7 @@ export const itemSchema = z.object({
   strSlotParentID: z.string().optional(),
 });
 
-export const zoneSchema = z.object({
+export const shipZoneSchema = z.object({
   strName: itemIdSchema,
   strRegID: z.string(),
   bTriggerOnOwner: z.boolean(),
@@ -76,7 +75,7 @@ export const shipInitialPositionSchema = z.object({
   bIgnoreGrav: z.boolean().optional(),
 });
 
-export const roomSchema = z.object({
+export const shipRoomSchema = z.object({
   strID: z.string(),
   bVoid: z.boolean(),
   aTiles: z.array(z.number().int()),
@@ -102,14 +101,14 @@ export const shipCondownerSchema = z.object({
   fMSRedamageAmount: z.number().int().optional(),
 });
 
-export const constructionTemplateSchema = z.object({
+export const shipConstructionTemplateSchema = z.object({
   nProgress: z.number().int(),
   fConstructionTime: z.number().int().optional(),
   aItems: z.array(
-    itemSchema
+    shipItemSchema
   ),
   aShallowPSpecs: z.array(
-    itemSchema
+    shipItemSchema
   ),
 });
 
@@ -121,12 +120,12 @@ export const shipSchema = z.object({
   fWearManeuver: z.number().int(),
   fWearAccrued: z.number().int(),
   aItems: z.array(
-    itemSchema
+    shipItemSchema
   ),
   vShipPos: z.object({ x: z.number().int(), y: z.number().int() }),
   objSS: shipInitialPositionSchema,
   aRooms: z.array(
-    roomSchema
+    shipRoomSchema
   ),
   DMGStatus: z.number().int(),
   fLastVisit: z.number().int(),
@@ -166,7 +165,7 @@ export const shipSchema = z.object({
     bClearanceSquawkID: z.boolean(),
   }).optional(),
   aShallowPSpecs: z.array(
-    itemSchema
+    shipItemSchema
   ).optional(),
   fFirstVisit: z.number().int().optional(),
   bBreakInUsed: z.boolean().optional(),
@@ -181,10 +180,10 @@ export const shipSchema = z.object({
   nInitConstructionProgress: z.number().int().optional(),
   strXPDR: z.string().optional(),
   aZones: z.array(
-    zoneSchema
+    shipZoneSchema
   ).optional(),
   aConstructionTemplates: z.array(
-    constructionTemplateSchema
+    shipConstructionTemplateSchema
   ).optional(),
   strTemplateName: z.string().optional(),
   aMarketConfigs: z.record(z.string(), itemIdSchema).optional(),

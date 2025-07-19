@@ -53,6 +53,8 @@ function throwIfUndefinedPassthrough(value, optionalMsg) {
     if (value === undefined) {
         throw new Error(optionalMsg);
     }
+
+    return value;
 }
 
 function calculatePerceivedBrigntess(r, g, b) {

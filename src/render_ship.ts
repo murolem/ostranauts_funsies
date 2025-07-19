@@ -7,7 +7,7 @@ import { installablesSchema } from '$src/schema/installables';
 import { condOwnersSchema } from '$schema/condOwners';
 import { assertValueNotUndefinedPassthrough } from '$utils/assertValueNotUndefined';
 import { createCanvas, loadImage, Image } from 'canvas';
-import { shipSchema } from '$src/schema/ship';
+import { shipItemSchema, shipSchema } from '$src/schema/ship';
 import chalk from 'chalk';
 import loaders from '$src/loaders';
 import path from 'path';
@@ -16,6 +16,7 @@ import { isWithinRange } from '$utils/isWithinRange';
 import { imagesDirpath } from '$preset';
 import type { ItemSchema } from '$schema/items';
 import { DEG2RAD } from '$utils/geom/converters';
+import type z from 'zod';
 const logger = new Logger("render_ship");
 const { logInfo, logWarn, logFatal } = logger;
 
@@ -188,75 +189,122 @@ const getCanvasPxPosition = (tilePosX: number, tilePosY: number): Position => {
 /** lazy loaded image store */
 const itemDefToImageMap: Record<string, Image> = {};
 
-shipDef.aItems.sort((a, b) => {
-    const dy = b.fY - a.fY;
-    if (dy !== 0) {
-        return dy;
-    } else {
-        return b.fX - a.fX;
+// shipDef.aItems.sort((a, b) => {
+//     const dy = b.fY - a.fY;
+//     if (dy !== 0) {
+//         return dy;
+//     } else {
+//         return b.fX - a.fX;
+//     }
+// });
+
+const shipDefItemsGroupedByDrawingOrder = shipDef.aItems.reduce<
+    Record<number, z.infer<typeof shipItemSchema>[]>
+>((acc, e) => {
+    const id = e.strName;
+    const idLc = id.toLocaleLowerCase();
+
+    if (idLc.includes("floor")) {
+        getObjPropOrCreate(acc, 0, () => []).push(e);
+        return acc;
     }
-});
 
-for (const [i, item] of shipDef.aItems.entries()) {
-    const iCounter = i + 1;
-    const logCounterPart = `${iCounter} of ${shipDef.aItems.length}`;
-
-    const itemId = item.strName;
-    const itemDef = defs.find(e => e.strName === itemId);
-    if (!itemDef)
-        throw new Error(`failed to render item ${chalk.bold(itemId)} (${logCounterPart}): item definition not found`);
-
-    let imageId: string | undefined;
-    switch (itemDef.defType) {
-        // defs that directly specify the image
-        case 'item':
-        case 'condOwnersOverlaysDefs':
-            imageId = itemDef.strImg;
-            break
-        case 'condOwners': {
-            const baseDef = itemDefs.find(def => def.strName === itemDef.strItemDef);
-            assertValueNotUndefinedPassthrough(baseDef, `base definition for item ${chalk.bold(itemId)} not found`);
-
-            imageId = baseDef?.strImg;
-            break;
-        }
-        default:
-            throw new Error("item def handler not impl");
+    if (idLc.includes("wall")) {
+        getObjPropOrCreate(acc, 10, () => []).push(e);
+        return acc;
     }
-    // const imageId = itemDef.strImg;
-    const image = await getObjPropOrCreateAsync(itemDefToImageMap, itemId, async () => {
-        if (imageId === undefined) {
-            logWarn(`undefined imageId for tile ${chalk.bold(itemId)}: will be rendering an empty tile instead`);
-            return emptyTile;
-        }
 
-        const imagePath = path.join(imagesDirpath, imageId + ".png");
-        if (!fs.existsSync(imagePath))
-            throw new Error("item image not found, tried path: " + imagePath);
-        return await loadImage(imagePath);
+    if (idLc.includes("conduit")) {
+        getObjPropOrCreate(acc, 20, () => []).push(e);
+        return acc;
+    }
+
+    if (idLc.includes("intake")) {
+        getObjPropOrCreate(acc, 30, () => []).push(e);
+        return acc;
+    }
+
+    getObjPropOrCreate(acc, 100, () => []).push(e);
+    return acc;
+}, {});
+
+for (const group of Object.values(shipDefItemsGroupedByDrawingOrder)) {
+    group.sort((a, b) => {
+        const dy = b.fY - a.fY;
+        if (dy !== 0) {
+            return dy;
+        } else {
+            return b.fX - a.fX;
+        }
     });
+}
 
-    const posPx = getCanvasPxPosition(item.fX, item.fY);
+let i = 0;
+for (const [drawOrder, items] of Object.entries(shipDefItemsGroupedByDrawingOrder)) {
+    for (const item of items) {
+        const iCounter = i + 1;
+        const logCounterPart = `draw order${drawOrder}; item ${iCounter} of ${shipDef.aItems.length}`;
 
-    ctx.save();
-    // translate to tile center
-    ctx.translate(posPx.x, posPx.y);
-    ctx.translate(tileSizePx / 2, tileSizePx / 2);
+        const itemId = item.strName;
+        logInfo(`[${i}] placing item ${chalk.bold(itemId)}`)
+        const itemDef = defs.find(e => e.strName === itemId);
+        if (!itemDef)
+            throw new Error(`failed to render item ${chalk.bold(itemId)} (${logCounterPart}): item definition not found`);
 
-    // apply rotation
-    ctx.rotate(DEG2RAD(item.fRotation))
+        let imageId: string | undefined;
+        switch (itemDef.defType) {
+            // defs that directly specify the image
+            case 'item':
+            case 'condOwnersOverlaysDefs':
+                imageId = itemDef.strImg;
+                break
+            case 'condOwners': {
+                const baseDef = itemDefs.find(def => def.strName === itemDef.strItemDef);
+                assertValueNotUndefinedPassthrough(baseDef, `base definition for item ${chalk.bold(itemId)} not found`);
 
-    // translate by half image size so that image center aligns with the tile center
-    ctx.translate(-image.width / 2, -image.height / 2);
+                imageId = baseDef?.strImg;
+                break;
+            }
+            default:
+                throw new Error("item def handler not impl");
+        }
+        // const imageId = itemDef.strImg;
+        const image = await getObjPropOrCreateAsync(itemDefToImageMap, itemId, async () => {
+            if (imageId === undefined) {
+                logWarn(`undefined imageId for tile ${chalk.bold(itemId)}: will be rendering an empty tile instead`);
+                return emptyTile;
+            }
 
-    ctx.drawImage(image, 0, 0);
-    ctx.restore();
+            const imagePath = path.join(imagesDirpath, imageId + ".png");
+            if (!fs.existsSync(imagePath))
+                throw new Error("item image not found, tried path: " + imagePath);
+            return await loadImage(imagePath);
+        });
 
-    const newFilepath = outputFilepath.slice(0, outputFilepath.length - path.parse(outputFilepath).ext.length)
-        + "-" + iCounter
-        + path.parse(outputFilepath).ext;
-    fs.writeFileSync(newFilepath, canvas.toBuffer());
+        const posPx = getCanvasPxPosition(item.fX, item.fY);
 
+        ctx.save();
+        // translate to tile center
+        ctx.translate(posPx.x, posPx.y);
+        ctx.translate(tileSizePx / 2, tileSizePx / 2);
+
+        // apply rotation
+        ctx.rotate(DEG2RAD(item.fRotation))
+
+        // translate by half image size so that image center aligns with the tile center
+        ctx.translate(-image.width / 2, -image.height / 2);
+
+        ctx.drawImage(image, 0, 0);
+        ctx.restore();
+
+        const newFilepath = outputFilepath.slice(0, outputFilepath.length - path.parse(outputFilepath).ext.length)
+            + "-" + iCounter
+            + path.parse(outputFilepath).ext;
+        fs.writeFileSync(newFilepath, canvas.toBuffer());
+
+
+        i++;
+    }
 }
 
 logInfo(`${chalk.bold("rendering complete!")} writing output: \nto ${outputFilepath}`);
