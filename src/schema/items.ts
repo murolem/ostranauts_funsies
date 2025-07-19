@@ -26,3 +26,4 @@ export const itemsSchema = z.array(
   }),
 );
 export type ItemsSchema = z.infer<typeof itemsSchema>;
+export type ItemSchema = ItemsSchema[number];

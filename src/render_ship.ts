@@ -14,6 +14,8 @@ import path from 'path';
 import { Logger } from '$logger';
 import { isWithinRange } from '$utils/isWithinRange';
 import { imagesDirpath } from '$preset';
+import type { ItemSchema } from '$schema/items';
+import { DEG2RAD } from '$utils/geom/converters';
 const logger = new Logger("render_ship");
 const { logInfo, logWarn, logFatal } = logger;
 
@@ -37,11 +39,11 @@ const data = fs.readJsonSync(shipDefFilepath);
 if (Array.isArray(data) && data.length !== 1)
     throw new Error("expected a single definition in a ship file, found: " + data.length);
 
-const def = shipSchema.parse(data[0]);
+const shipDef = shipSchema.parse(data[0]);
 
 // =======================================
 
-const shipName = def.strName;
+const shipName = shipDef.strName;
 const outputFilepath = path.join("renders", shipName + ".png");
 fs.ensureDirSync(path.parse(outputFilepath).dir);
 
@@ -60,6 +62,39 @@ const mapDefToIncludeType = <T, S extends string>(def: T, type: S): { defType: S
         ...def
     }
 }
+
+const lookupBaseDef = (baseDefId: string): ItemSchema | null => {
+    return itemDefs.find(def => def.strName === baseDefId) ?? null;
+}
+
+// interface DefCompBase {
+//     type: string,
+// }
+
+// type Def = {
+//     defType: string,
+//     data: unknown,
+//     baseDef?: Def
+// }
+
+// const rawDefsWithTypes = [
+//     ['item', itemDefs],
+//     ['condOwner', condOwnersDefs],
+//     ['condOwnersOverlay', condOwnersOverlaysDefs]
+// ] satisfies [string, unknown][];
+
+// const defs: Def[] = [];
+// for (const rawDefs of rawDefsWithTypes) {
+//     for(const rawDef of rawDefs) {
+//         const baseDef = rawDef.
+
+//         const def: Def = {
+//             defType: rawDef[0],
+//             data: rawDef[1],
+//             baseDef
+//         }
+//     }
+// }
 
 const defs = [
     ...itemDefs.map(e => mapDefToIncludeType(e, 'item')),
@@ -86,7 +121,7 @@ type Position = {
     y: number
 }
 
-const bounds = def.aItems.reduce<
+const bounds = shipDef.aItems.reduce<
     Bounds
 >
     ((acc, e) => {
@@ -108,8 +143,8 @@ const bounds = def.aItems.reduce<
     }, { minX: 0, maxX: 0, minY: 0, maxY: 0 });
 
 const sizeTiles: Size = {
-    w: bounds.maxX - bounds.minX + 3,
-    h: bounds.maxY - bounds.minY + 3,
+    w: bounds.maxX - bounds.minX + 7,
+    h: bounds.maxY - bounds.minY + 7,
 }
 
 logInfo(chalk.bold(`size in ${chalk.underline("tiles")}: ${sizeTiles.w} x ${sizeTiles.w}`));
@@ -127,6 +162,11 @@ logInfo(chalk.bold(`size in ${chalk.underline("pixels")}: ${sizePixels.w} x ${si
 
 const canvas = createCanvas(sizePixels.w, sizePixels.h);
 const ctx = canvas.getContext('2d');
+// rotate entire canvas by 180 deg to render ships in the same direction game does
+ctx.translate(sizePixels.w / 2, sizePixels.h / 2);
+ctx.rotate(Math.PI);
+ctx.translate(-sizePixels.w / 2, -sizePixels.h / 2);
+// we love pixels
 ctx.imageSmoothingEnabled = false;
 
 if (!fs.existsSync(emptyTileImageFilepath))
@@ -138,8 +178,8 @@ const emptyTile = await loadImage(fs.readFileSync(emptyTileImageFilepath));
 const getCanvasPxPosition = (tilePosX: number, tilePosY: number): Position => {
     // offset position into positive number territory, then multiple by tile size
     return {
-        x: (tilePosX + bounds.minX * -1) * tileSizePx,
-        y: (tilePosY + bounds.minY * -1) * tileSizePx,
+        x: (tilePosX + 3 + bounds.minX * -1) * tileSizePx,
+        y: (tilePosY + 3 + bounds.minY * -1) * tileSizePx,
     }
 }
 
@@ -148,9 +188,18 @@ const getCanvasPxPosition = (tilePosX: number, tilePosY: number): Position => {
 /** lazy loaded image store */
 const itemDefToImageMap: Record<string, Image> = {};
 
-for (const [i, item] of def.aItems.entries()) {
+shipDef.aItems.sort((a, b) => {
+    const dy = b.fY - a.fY;
+    if (dy !== 0) {
+        return dy;
+    } else {
+        return b.fX - a.fX;
+    }
+});
+
+for (const [i, item] of shipDef.aItems.entries()) {
     const iCounter = i + 1;
-    const logCounterPart = `${iCounter} of ${def.aItems.length}`;
+    const logCounterPart = `${iCounter} of ${shipDef.aItems.length}`;
 
     const itemId = item.strName;
     const itemDef = defs.find(e => e.strName === itemId);
@@ -165,8 +214,8 @@ for (const [i, item] of def.aItems.entries()) {
             imageId = itemDef.strImg;
             break
         case 'condOwners': {
-            const baseDef = itemDefs.find(def => def.strName === itemId);
-            assertValueNotUndefinedPassthrough(baseDef, "based definition not found");
+            const baseDef = itemDefs.find(def => def.strName === itemDef.strItemDef);
+            assertValueNotUndefinedPassthrough(baseDef, `base definition for item ${chalk.bold(itemId)} not found`);
 
             imageId = baseDef?.strImg;
             break;
@@ -188,7 +237,26 @@ for (const [i, item] of def.aItems.entries()) {
     });
 
     const posPx = getCanvasPxPosition(item.fX, item.fY);
-    ctx.drawImage(image, posPx.x, posPx.y);
+
+    ctx.save();
+    // translate to tile center
+    ctx.translate(posPx.x, posPx.y);
+    ctx.translate(tileSizePx / 2, tileSizePx / 2);
+
+    // apply rotation
+    ctx.rotate(DEG2RAD(item.fRotation))
+
+    // translate by half image size so that image center aligns with the tile center
+    ctx.translate(-image.width / 2, -image.height / 2);
+
+    ctx.drawImage(image, 0, 0);
+    ctx.restore();
+
+    const newFilepath = outputFilepath.slice(0, outputFilepath.length - path.parse(outputFilepath).ext.length)
+        + "-" + iCounter
+        + path.parse(outputFilepath).ext;
+    fs.writeFileSync(newFilepath, canvas.toBuffer());
+
 }
 
 logInfo(`${chalk.bold("rendering complete!")} writing output: \nto ${outputFilepath}`);

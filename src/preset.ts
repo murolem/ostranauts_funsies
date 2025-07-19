@@ -5,7 +5,7 @@ export const gameAssetsPath = "/home/aliser/.var/app/com.valvesoftware.Steam/.lo
 export const imagesDirpath = toOsPath(`${gameAssetsPath}/images`);
 
 /** list of visual and grid placement rules for condition owners to use. */
-export const itemsDirpath = toOsPath(`${gameAssetsPath}/items`);
+export const itemsDirpath = toOsPath(`${gameAssetsPath}/data/items`);
 
 /** list of rules for installing/uninstalling/scrapping objects */
 export const installablesMainFilepath = toOsPath(`${gameAssetsPath}/data/installables/installables.json`);
