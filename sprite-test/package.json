@@ -1,0 +1,21 @@
+{
+  "name": "my-vue-app",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "npm run generate:ss-metadata && tsc && vite build",
+    "preview": "vite preview",
+    "generate:ss-metadata": "tsx scripts/generate-ss-metadata.ts"
+  },
+  "devDependencies": {
+    "typescript": "~5.8.3",
+    "vite": "^7.0.4"
+  },
+  "dependencies": {
+    "fs-extra": "^11.3.0",
+    "path-browserify-esm": "^1.0.6",
+    "vite-tsconfig-paths": "^5.1.4"
+  }
+}

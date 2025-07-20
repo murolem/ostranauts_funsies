@@ -1,0 +1,269 @@
+import type { TileConfiguration } from '$lib/Spritesheet';
+import type { TileBrush } from '$lib/TileBrush';
+import { canvasMarginPx, canvasPaddingPx, tileScaledSizePx } from '$preset';
+import { convertIndexToXyPosition, convertXyPositionToIndex } from '$src/lib/converters';
+import { cardinalDirectionsToOffsetsMap } from '$src/lib/mappings';
+import type { PxPosition, TilePosition, SizeTiles, SizePx, CardinalDirection } from '$src/types';
+import { constrain } from '$utils/constrain';
+import { isWithinRange } from '$utils/isWithinRange';
+
+/** Tile index inside a grid. */
+export type GridIndex = number;
+/** Tile configuration within a grid. */
+export type GridTile = TileConfiguration | undefined;
+
+export class Grid {
+    get sizeTiles() { return this._sizeTiles; }
+    private _sizeTiles: SizeTiles;
+
+    get sizePixelsPadded() { return this._sizePixelsPadded; }
+    private _sizePixelsPadded: SizePx;
+
+    get sizePixelsUnpadded() { return this._sizePixelsUnpadded; }
+    private _sizePixelsUnpadded: SizePx;
+
+    /** A record mapping indices, representing 2D positions, to tile configurations at these positions. */
+    private _grid: Record<GridIndex, TileConfiguration> = {}
+
+    constructor(
+        private _canvas: HTMLCanvasElement,
+        private _ctx: CanvasRenderingContext2D,
+    ) {
+        this._sizeTiles = Object.freeze({
+            w: Math.floor((window.innerWidth - canvasMarginPx * 2 - canvasPaddingPx * 2) / tileScaledSizePx),
+            h: Math.floor((window.innerHeight - canvasMarginPx * 2 - canvasPaddingPx * 2) / tileScaledSizePx),
+        });
+
+        this._sizePixelsPadded = Object.freeze({
+            w: this.sizeTiles.w * tileScaledSizePx,
+            h: this.sizeTiles.h * tileScaledSizePx
+        });
+
+        this._sizePixelsUnpadded = Object.freeze({
+            w: this.sizePixelsPadded.w + canvasPaddingPx * 2,
+            h: this.sizePixelsPadded.h + canvasPaddingPx * 2
+        });
+
+        _canvas.width = this.sizePixelsUnpadded.w;
+        _canvas.height = this.sizePixelsUnpadded.h;
+    }
+
+    /**
+     * Converts pixel position within canvas to a tile position. 
+     * Resulting position is constrained.
+     * @param pxPos 
+     * @returns 
+     */
+    convertPxPositionToTilePos(pxPos: PxPosition): TilePosition {
+        return {
+            x: constrain(Math.floor(pxPos.x / tileScaledSizePx), 0, this.sizeTiles.w),
+            y: constrain(Math.floor(pxPos.y / tileScaledSizePx), 0, this.sizeTiles.h),
+        }
+    }
+
+    /**
+     * Converts tile position to a tile grid index.
+     * @param {Size} tilePos 
+     * @returns 
+     */
+    convertTilePositionToTileGridIndex(tilePos: TilePosition): GridIndex {
+        return convertXyPositionToIndex(tilePos, this.sizeTiles.w);
+    }
+
+    /**
+     * Converts tile grid index to a tile position.
+     * @param tileGridIndex 
+     * @returns 
+     */
+    convertTileGridIndexToTilePosition(tileGridIndex: GridIndex): TilePosition {
+        return convertIndexToXyPosition(tileGridIndex, this.sizeTiles.w);
+    }
+
+    /** 
+     * Returns tile at tile position.
+     */
+    get(gridIndex: GridIndex): GridTile;
+    /** 
+     * Returns tile at grid index.
+     */
+    get(tilePos: TilePosition): GridTile;
+    get(arg1: GridIndex | TilePosition): GridTile {
+        const gridIndex = typeof arg1 === 'number'
+            ? arg1
+            : this.convertTilePositionToTileGridIndex(arg1);
+
+        return this._grid[gridIndex];
+    }
+
+    /** 
+     * Returns tiles neighboring a tile position on cardinal directions.
+     * Neighbor tiles outside grid bounds will always return `undefined`.
+     * @throws {Error} If tile position outside grid bounds.
+     */
+    getCardinalNeighbors(tilePos: TilePosition): Record<CardinalDirection, GridTile> {
+        const res: Record<CardinalDirection, GridTile> = {
+            left: undefined,
+            up: undefined,
+            right: undefined,
+            down: undefined
+        };
+
+        for (const [dirUntyped, offset] of Object.entries(cardinalDirectionsToOffsetsMap)) {
+            const dir = dirUntyped as keyof typeof cardinalDirectionsToOffsetsMap;
+
+            const neighborTilePos: TilePosition = {
+                x: tilePos.x + offset.x,
+                y: tilePos.y + offset.y,
+            }
+
+            if (!this.isTilePositionWithinGrid(neighborTilePos)) {
+                continue;
+            }
+
+            res[dir] = this.get(neighborTilePos);
+        }
+
+        return res;
+    }
+
+    /** 
+     * Sets tile at tile position.
+     * @throws {Error} If tile position outside grid bounds.
+     */
+    set(gridIndex: GridIndex, value: TileConfiguration): void;
+    /** 
+     * Sets tile at grid index.
+     * @throws {Error} If grid index outside grid bounds.
+     */
+    set(tilePos: TilePosition, value: TileConfiguration): void;
+    set(arg1: GridIndex | TilePosition, arg2: TileConfiguration): void {
+        const gridIndex = typeof arg1 === 'number'
+            ? arg1
+            : this.convertTilePositionToTileGridIndex(arg1);
+        const value = arg2;
+
+        this.assertGridIndexWithinGrid(gridIndex);
+        this._grid[gridIndex] = value;
+    }
+
+    /** 
+     * Checks whether there's a tile at tile position.
+     * @throws {Error} If tile position outside grid bounds.
+     */
+    hasAt(gridIndex: GridIndex): boolean;
+    /** 
+     * Checks whether there a tile at grid index.
+     * @throws {Error} If grid index outside grid bounds.
+     */
+    hasAt(tilePos: TilePosition): boolean;
+    hasAt(arg1: GridIndex | TilePosition): boolean {
+        const gridIndex = typeof arg1 === 'number'
+            ? arg1
+            : this.convertTilePositionToTileGridIndex(arg1);
+
+        this.assertGridIndexWithinGrid(gridIndex);
+        return this._grid[gridIndex] !== undefined;
+    }
+
+    /**
+     * Draws grid onto canvas.
+     */
+    draw(brush: TileBrush) {
+        const ctx = this._ctx;
+
+        ctx.strokeStyle = 'hsl(0, 0%, 20%)';
+
+        // draw grid: vertical lines
+        for (let i = 0; i <= this.sizeTiles.w; i++) {
+            const pxPosFrom = {
+                x: tileScaledSizePx * i,
+                y: 0
+            };
+            const pxPosTo = {
+                x: tileScaledSizePx * i,
+                y: this.sizePixelsPadded.h
+            };
+
+            ctx.beginPath();
+            ctx.moveTo(pxPosFrom.x, pxPosFrom.y);
+            ctx.lineTo(pxPosTo.x, pxPosTo.y);
+            ctx.stroke();
+        }
+
+        // draw grid: horizontal lines
+        for (let i = 0; i <= this.sizeTiles.h; i++) {
+            const pxPosFrom = {
+                x: 0,
+                y: tileScaledSizePx * i
+            };
+            const pxPosTo = {
+                x: this.sizePixelsPadded.w,
+                y: tileScaledSizePx * i
+            };
+
+            ctx.beginPath();
+            ctx.moveTo(pxPosFrom.x, pxPosFrom.y);
+            ctx.lineTo(pxPosTo.x, pxPosTo.y);
+            ctx.stroke();
+        }
+
+        // draw grid: tiles
+        let i = 0;
+        for (let [gridIndexStr, tileConfiguration] of Object.entries(this._grid)) {
+            const gridIndex = parseInt(gridIndexStr);
+            const tilePos = this.convertTileGridIndexToTilePosition(gridIndex);
+
+            const pxPos = {
+                x: tilePos.x * tileScaledSizePx,
+                y: tilePos.y * tileScaledSizePx,
+            }
+
+            const ssRegionToDraw = brush.tileset.calculateSpritesheetTileRegion(tileConfiguration);
+            // console.log("drawing region: " + JSON.stringify(ssRegionToDraw))
+            ctx.drawImage(
+                brush.tileset.image,
+                ssRegionToDraw.x, ssRegionToDraw.y, ssRegionToDraw.w, ssRegionToDraw.h,
+                pxPos.x, pxPos.y, tileScaledSizePx, tileScaledSizePx
+            );
+
+            i++;
+        }
+    }
+
+    /**
+     * Checks whether a tile position is within the grid.
+     * @param tilePos
+     * @returns 
+     */
+    isTilePositionWithinGrid(tilePos: TilePosition): boolean {
+        return isWithinRange(tilePos.x, 0, this.sizeTiles.w - 1)
+            && isWithinRange(tilePos.y, 0, this.sizeTiles.h - 1);
+    }
+
+    /**
+     * Checks whether a grid index is within the grid.
+     * @param gridIndex
+     * @returns 
+     */
+    isGridIndexWithinGrid(gridIndex: GridIndex): boolean {
+        return isWithinRange(gridIndex, 0, this.sizeTiles.w * this.sizeTiles.h);
+    }
+
+    /**
+     * Asserts that a tile position is within the grid.
+     * @param tilePos
+     */
+    assertTilePositionWithinGrid(tilePos: TilePosition): void {
+        if (!this.isTilePositionWithinGrid(tilePos))
+            throw new Error("failed assert assertIsTilePositionWithinGrid: " + tilePos);
+    }
+
+    /**
+     * Asserts that a grid index is within the grid.
+     * @param gridIndex
+     */
+    assertGridIndexWithinGrid(gridIndex: GridIndex): void {
+        if (!this.isGridIndexWithinGrid(gridIndex))
+            throw new Error("failed assert assertGridIndexWithinGrid: " + gridIndex);
+    }
+}
