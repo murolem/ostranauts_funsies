@@ -22,7 +22,7 @@ export const canvasMarginPx = 50;
 /** Canvas inner offset from its own edges. */
 export const canvasPaddingPx = 100;
 
-export const spritesheetsUrlDirpath = "/spritesheets";
+export const spritesheetsUrlDirpath = "spritesheets";
 
 /** Filename of the spritesheet metadata file, relative to the spritesheets directory. */
 export const spritesheetMetadataFilename = "metadata.json";
