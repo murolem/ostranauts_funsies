@@ -17,10 +17,10 @@ export const ssSizeTiles: SizeTiles = Object.freeze({
 });
 
 /** Canvas offset from edges of the page. */
-export const canvasMarginPx = 50;
+export const canvasMarginPx = 0;
 
 /** Canvas inner offset from its own edges. */
-export const canvasPaddingPx = 100;
+export const canvasPaddingPx = 0;
 
 export const spritesheetsUrlDirpath = "spritesheets";
 

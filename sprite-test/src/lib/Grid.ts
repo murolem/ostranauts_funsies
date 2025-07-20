@@ -23,15 +23,15 @@ export class Grid {
     private _sizePixelsUnpadded: SizePx;
 
     /** A record mapping indices, representing 2D positions, to tile configurations at these positions. */
-    private _grid: Record<GridIndex, TileConfiguration> = {}
+    private _grid: Record<GridIndex, GridTile> = {}
 
     constructor(
         private _canvas: HTMLCanvasElement,
         private _ctx: CanvasRenderingContext2D,
     ) {
         this._sizeTiles = Object.freeze({
-            w: Math.floor((window.innerWidth - canvasMarginPx * 2 - canvasPaddingPx * 2) / tileScaledSizePx),
-            h: Math.floor((window.innerHeight - canvasMarginPx * 2 - canvasPaddingPx * 2) / tileScaledSizePx),
+            w: Math.floor(_canvas.clientWidth / tileScaledSizePx),
+            h: Math.floor(_canvas.clientHeight / tileScaledSizePx),
         });
 
         this._sizePixelsPadded = Object.freeze({
@@ -130,20 +130,23 @@ export class Grid {
      * Sets tile at tile position.
      * @throws {Error} If tile position outside grid bounds.
      */
-    set(gridIndex: GridIndex, value: TileConfiguration): void;
+    set(gridIndex: GridIndex, value: GridTile): void;
     /** 
      * Sets tile at grid index.
      * @throws {Error} If grid index outside grid bounds.
      */
-    set(tilePos: TilePosition, value: TileConfiguration): void;
-    set(arg1: GridIndex | TilePosition, arg2: TileConfiguration): void {
+    set(tilePos: TilePosition, value: GridTile): void;
+    set(arg1: GridIndex | TilePosition, arg2: GridTile): void {
         const gridIndex = typeof arg1 === 'number'
             ? arg1
             : this.convertTilePositionToTileGridIndex(arg1);
         const value = arg2;
 
         this.assertGridIndexWithinGrid(gridIndex);
-        this._grid[gridIndex] = value;
+        if (value === undefined)
+            delete this._grid[gridIndex];
+        else
+            this._grid[gridIndex] = value;
     }
 
     /** 
@@ -210,6 +213,12 @@ export class Grid {
         // draw grid: tiles
         let i = 0;
         for (let [gridIndexStr, tileConfiguration] of Object.entries(this._grid)) {
+            // skip undefined tiles.
+            // shouldn't happen but still checking.
+            // todo check if actually happens
+            if (tileConfiguration === undefined)
+                continue;
+
             const gridIndex = parseInt(gridIndexStr);
             const tilePos = this.convertTileGridIndexToTilePosition(gridIndex);
 
@@ -228,6 +237,13 @@ export class Grid {
 
             i++;
         }
+    }
+
+    /**
+     * Clears grid from all tiles.
+     */
+    clear() {
+        this._grid = {};
     }
 
     /**

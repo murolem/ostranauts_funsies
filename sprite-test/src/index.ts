@@ -5,7 +5,7 @@ import { Grid } from '$src/lib/Grid';
 import { TileBrush } from '$src/lib/TileBrush';
 import { Spritesheet } from '$src/lib/Spritesheet';
 import { pickRandomItem } from '$utils/rand/pickRandomItem';
-
+import createGUI from '$lib/createGUI';
 
 if (Object.keys(ssIndexToTilingMap).length !== ssSizeTilesTotal)
     throw new Error(`mismatch between configuring spritesheet size and tiles and defined mappings: ss size set to ${ssSizeTilesTotal} tiles, while index mappings configured for ${Object.keys(ssIndexToTilingMap).length} tiles`);
@@ -38,6 +38,12 @@ canvas.addEventListener('mousemove', (e) => {
     offsetMousePos.y = e.offsetY - canvasPaddingPx;
 });
 
+createGUI(canvas, {
+    reload: trigger => { grid.clear(); },
+    selectTool: (trigger, tool) => { brush.setMode(tool) },
+    selectTileset: (trigger, tileset) => { },
+});
+
 function draw() {
     ctx.save();
     ctx.translate(canvasPaddingPx, canvasPaddingPx);
@@ -54,7 +60,7 @@ function draw() {
 
     if (isMouseDown) {
         const tilePos = grid.convertPxPositionToTilePos(offsetMousePos)
-        brush.paint(tilePos);
+        brush.applyAt(tilePos);
     }
 
     grid.draw(brush);
