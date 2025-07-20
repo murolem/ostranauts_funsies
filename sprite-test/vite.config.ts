@@ -5,7 +5,8 @@ export default {
     plugins: [
         tsconfigPaths()
     ],
+    base: "https://murolem.github.io/ostranauts_funsies/sprite-test/app/",
     build: {
-        outDir: 'app'
+        outDir: 'app',
     }
 } satisfies UserConfig;
