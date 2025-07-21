@@ -25,7 +25,7 @@ body {
     width: 100%;
     height: 100%;
 
-    border: 1px dashed #a5a5a5;
+    border: 1px dashed hsl(0, 0%, 40%);
 }
 
 .gui-container {
@@ -43,9 +43,11 @@ body {
     
     margin: 1rem 0;
     border-radius: 1rem / 1.5rem;
-    padding: 0 2rem;
+    padding: 1.2rem 0.9rem;
+    height: fit-content;
+    align-self: end;
     
-    box-shadow: -2px -2px 3px hsl(0, 0%, 80%),
+    box-shadow: -2px -2px 1px hsl(0, 0%, 80%),
         2px 2px 4px hsl(0, 0%, 10%);
 
     & > .button-section { 
@@ -62,22 +64,27 @@ body {
 }
 
 button {
+    all: unset;
+
     --btn-padding: 0.6rem;
     --btn-sh-active-base: inset 1px 1px 2px hsl(0, 0%, 5%, 0.7),
         inset -1px -1px 1px hsl(0, 0%, 95%, 0.2);
     --btn-scale-onpress: 95%;
+    --btn-size-to-border-radius-ratio: 3;
+    --btn-size: 3.25rem;
 
-    all: unset;
+    width: var(--btn-size);
+    height: var(--btn-size);
+    border-radius: calc(var(--btn-size) / var(--btn-size-to-border-radius-ratio));
+
     display: flex;
     justify-content: center;
     align-items: center;
     user-select: none;
 
-
     padding: var(--button-padding);
     background-color: #31302D;
     overflow: hidden;
-    border-radius: 1.5rem;
     
     border: none;
 
@@ -87,8 +94,8 @@ button {
     transition: all 125ms ease;
 
     & > .icon {
-        /* apply padding here bcs this would allow to not have gaps when using some effects */
-        /* margin: var(--btn-padding); */
+        width: calc(100% - var(--btn-padding) * 2);
+        height: auto;
     }
 
     &:active {
@@ -97,31 +104,13 @@ button {
     }
 }
 
-.simple-button,
-.toggle-button,
-.tile-button {
-    --size: 5rem;
-    width: var(--size);
-    height: var(--size);
-
-    & > .icon {
-        width: calc(100% - var(--btn-padding) * 2);
-        height: auto;
-    }
-}
-
-.simple-button {
-
-}
-
 .toggle-button:active,
 .toggle-button.toggled {
     --toggle-col: #fe8227;
-    --sh-size: 5px;
-    --sh-blur: 3px;
-    --sh-spread: 8px;
-    --sh-opacity: 10%;
-
+	--sh-size: 0px;
+	--sh-blur: 12px;
+	--sh-spread: 4px;
+	--sh-opacity: 17%;
     box-shadow:
         var(--btn-sh-active-base),
         inset var(--sh-size) 0 var(--sh-blur) var(--sh-spread) color-mix(in srgb, var(--toggle-col) var(--sh-opacity), transparent),

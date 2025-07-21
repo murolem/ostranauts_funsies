@@ -29,10 +29,13 @@ const brush = new TileBrush(grid, pickRandomItem(spritesheets));
 // =====
 
 let isMouseDown = false;
+let isMouseDownWithinCanvas = false;
 let offsetMousePos = { x: 0, y: 0 };
 
-canvas.addEventListener('mousedown', () => isMouseDown = true);
-canvas.addEventListener('mouseup', () => isMouseDown = false);
+window.addEventListener('mousedown', () => isMouseDown = true);
+window.addEventListener('mouseup', () => isMouseDown = false);
+canvas.addEventListener('mousedown', () => isMouseDownWithinCanvas = true);
+canvas.addEventListener('mouseup', () => isMouseDownWithinCanvas = false);
 canvas.addEventListener('mousemove', (e) => {
     offsetMousePos.x = e.offsetX - canvasPaddingPx;
     offsetMousePos.y = e.offsetY - canvasPaddingPx;
@@ -58,9 +61,11 @@ function draw() {
 
     // ============================
 
-    if (isMouseDown) {
-        const tilePos = grid.convertPxPositionToTilePos(offsetMousePos)
-        brush.applyAt(tilePos);
+    // check for both because the "up" event sometimes can not be detected within an element
+    // because it happens outside the element (ie user holds mouse down, then moves it outside the element and releases there).
+    if (isMouseDown && isMouseDownWithinCanvas) {
+        const tilePos = grid.convertPxPositionToTilePos(offsetMousePos);
+        brush.tryApplyAt(tilePos);
     }
 
     grid.draw(brush);

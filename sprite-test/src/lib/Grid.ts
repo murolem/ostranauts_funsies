@@ -4,7 +4,8 @@ import { canvasMarginPx, canvasPaddingPx, tileScaledSizePx } from '$preset';
 import { convertIndexToXyPosition, convertXyPositionToIndex } from '$src/lib/converters';
 import { cardinalDirectionsToOffsetsMap } from '$src/lib/mappings';
 import type { PxPosition, TilePosition, SizeTiles, SizePx, CardinalDirection } from '$src/types';
-import { constrain } from '$utils/constrain';
+import { clamp } from '$utils/clamp';
+import { generateBezierFromSketch } from '$utils/generateBezierFromSketch';
 import { isWithinRange } from '$utils/isWithinRange';
 
 /** Tile index inside a grid. */
@@ -24,6 +25,22 @@ export class Grid {
 
     /** A record mapping indices, representing 2D positions, to tile configurations at these positions. */
     private _grid: Record<GridIndex, GridTile> = {}
+
+    /** How many ms it takes to clear the grid? */
+    private _scheduledClearDurationMs = 150;
+
+    /** Timestamp pointing to when to clear the entire grid.  */
+    private _clearScheduleAtTs: number | null = null;
+
+    /** T curve used to smoothen the clear animation. */
+    private _sampleClearCurve = generateBezierFromSketch(`
+                                                                                        X       x
+                                                                 
+                                                X
+                                        
+                                
+x             x
+`);
 
     constructor(
         private _canvas: HTMLCanvasElement,
@@ -50,14 +67,13 @@ export class Grid {
 
     /**
      * Converts pixel position within canvas to a tile position. 
-     * Resulting position is constrained.
      * @param pxPos 
      * @returns 
      */
     convertPxPositionToTilePos(pxPos: PxPosition): TilePosition {
         return {
-            x: constrain(Math.floor(pxPos.x / tileScaledSizePx), 0, this.sizeTiles.w),
-            y: constrain(Math.floor(pxPos.y / tileScaledSizePx), 0, this.sizeTiles.h),
+            x: Math.floor(pxPos.x / tileScaledSizePx),
+            y: Math.floor(pxPos.y / tileScaledSizePx),
         }
     }
 
@@ -172,6 +188,8 @@ export class Grid {
      * Draws grid onto canvas.
      */
     draw(brush: TileBrush) {
+        this._tryScheduledClearIfAny();
+
         const ctx = this._ctx;
 
         ctx.strokeStyle = 'hsl(0, 0%, 20%)';
@@ -210,6 +228,16 @@ export class Grid {
             ctx.stroke();
         }
 
+        const isClearScheduled = this._isClearScheduled();
+        let clearProgressT = 0;
+        let tileOffsetFromClear = 0;
+        if (isClearScheduled) {
+            const clearProgressTRaw = this._getScheduledClearProgress();
+            // sampled
+            clearProgressT = this._sampleClearCurve(clearProgressTRaw);
+            tileOffsetFromClear = tileScaledSizePx / 2 * clearProgressT;
+        }
+
         // draw grid: tiles
         let i = 0;
         for (let [gridIndexStr, tileConfiguration] of Object.entries(this._grid)) {
@@ -228,22 +256,62 @@ export class Grid {
             }
 
             const ssRegionToDraw = brush.tileset.calculateSpritesheetTileRegion(tileConfiguration);
+
+            ctx.save();
+            ctx.translate(pxPos.x, pxPos.y);
+
+            if (isClearScheduled) {
+                ctx.translate(tileOffsetFromClear, tileOffsetFromClear);
+                ctx.scale(1 - clearProgressT, 1 - clearProgressT);
+            }
+
             // console.log("drawing region: " + JSON.stringify(ssRegionToDraw))
             ctx.drawImage(
                 brush.tileset.image,
                 ssRegionToDraw.x, ssRegionToDraw.y, ssRegionToDraw.w, ssRegionToDraw.h,
-                pxPos.x, pxPos.y, tileScaledSizePx, tileScaledSizePx
+                0, 0, tileScaledSizePx, tileScaledSizePx
             );
 
+            ctx.restore();
             i++;
         }
     }
 
     /**
-     * Clears grid from all tiles.
+     * Schedules a clear of the grid to near time.
      */
-    clear() {
-        this._grid = {};
+    clear(): void {
+        if (this._isClearScheduled())
+            return;
+
+        this._clearScheduleAtTs = Date.now() + this._scheduledClearDurationMs;
+    }
+
+    /**
+     * Clears the grid if scheduled clear time has cometh. Otherwise, does nothing.
+     */
+    private _tryScheduledClearIfAny(): void {
+        if (this._isClearScheduled() && this._clearScheduleAtTs! <= Date.now()) {
+            this._grid = {};
+            this._clearScheduleAtTs = null;
+        }
+    }
+
+    /**
+     * Returns progress on a scheduled clear, from 0 to 1.
+     * If no clear is scheduled, returns 0.
+     */
+    private _getScheduledClearProgress(): number {
+        if (!this._isClearScheduled())
+            return 0;
+
+        const msLeft = this._clearScheduleAtTs! - Date.now();
+        const t = 1 - (msLeft / this._scheduledClearDurationMs);
+        return clamp(t, 0, 1);
+    }
+
+    private _isClearScheduled() {
+        return this._clearScheduleAtTs !== null;
     }
 
     /**

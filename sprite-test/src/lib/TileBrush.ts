@@ -25,7 +25,7 @@ export class TileBrush {
         this.mode = mode;
     }
 
-    applyAt(tilePos: TilePosition): void {
+    tryApplyAt(tilePos: TilePosition): void {
         // attempting to draw outside of bounds = skip
         if (!this._grid.isTilePositionWithinGrid(tilePos))
             return;
