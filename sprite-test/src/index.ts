@@ -1,6 +1,6 @@
 import { ssIndexToTilingMap } from '$src/lib/mappings';
 import { throwIfNullishPassthrough } from '$utils/throwIfNullishPassthrough';
-import { canvasPaddingPx, ssSizeTilesTotal } from '$preset';
+import { ssSizeTilesTotal } from '$preset';
 import { Grid } from '$src/lib/Grid';
 import { TileBrush } from '$src/lib/TileBrush';
 import { Spritesheet } from '$src/lib/Spritesheet';
@@ -37,8 +37,8 @@ window.addEventListener('mouseup', () => isMouseDown = false);
 canvas.addEventListener('mousedown', () => isMouseDownWithinCanvas = true);
 canvas.addEventListener('mouseup', () => isMouseDownWithinCanvas = false);
 canvas.addEventListener('mousemove', (e) => {
-    offsetMousePos.x = e.offsetX - canvasPaddingPx;
-    offsetMousePos.y = e.offsetY - canvasPaddingPx;
+    offsetMousePos.x = e.offsetX;
+    offsetMousePos.y = e.offsetY;
 });
 
 createGUI(canvas, {
@@ -49,7 +49,6 @@ createGUI(canvas, {
 
 function draw() {
     ctx.save();
-    ctx.translate(canvasPaddingPx, canvasPaddingPx);
     // this resets with resizes. smh.
     ctx.imageSmoothingEnabled = false;
 

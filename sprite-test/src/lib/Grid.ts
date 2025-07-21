@@ -1,6 +1,6 @@
 import type { TileConfiguration } from '$lib/Spritesheet';
 import type { TileBrush } from '$lib/TileBrush';
-import { canvasMarginPx, canvasPaddingPx, tileScaledSizePx } from '$preset';
+import { tileScaledSizePx } from '$preset';
 import { convertIndexToXyPosition, convertXyPositionToIndex } from '$src/lib/converters';
 import { cardinalDirectionsToOffsetsMap } from '$src/lib/mappings';
 import type { PxPosition, TilePosition, SizeTiles, SizePx, CardinalDirection } from '$src/types';
@@ -17,11 +17,8 @@ export class Grid {
     get sizeTiles() { return this._sizeTiles; }
     private _sizeTiles: SizeTiles;
 
-    get sizePixelsPadded() { return this._sizePixelsPadded; }
-    private _sizePixelsPadded: SizePx;
-
-    get sizePixelsUnpadded() { return this._sizePixelsUnpadded; }
-    private _sizePixelsUnpadded: SizePx;
+    get sizePixelsPadded() { return this._sizePixels; }
+    private _sizePixels: SizePx;
 
     /** A record mapping indices, representing 2D positions, to tile configurations at these positions. */
     private _grid: Record<GridIndex, GridTile> = {}
@@ -51,18 +48,15 @@ x             x
             h: Math.floor(_canvas.clientHeight / tileScaledSizePx),
         });
 
-        this._sizePixelsPadded = Object.freeze({
+        this._sizePixels = Object.freeze({
             w: this.sizeTiles.w * tileScaledSizePx,
             h: this.sizeTiles.h * tileScaledSizePx
         });
 
-        this._sizePixelsUnpadded = Object.freeze({
-            w: this.sizePixelsPadded.w + canvasPaddingPx * 2,
-            h: this.sizePixelsPadded.h + canvasPaddingPx * 2
-        });
+        _canvas.width = this._sizePixels.w;
+        _canvas.height = this._sizePixels.h;
 
-        _canvas.width = this.sizePixelsUnpadded.w;
-        _canvas.height = this.sizePixelsUnpadded.h;
+        _canvas.classList.add("initialized");
     }
 
     /**

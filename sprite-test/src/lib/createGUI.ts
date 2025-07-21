@@ -141,14 +141,17 @@ export default function (canvas: HTMLCanvasElement, actions: ActionMap) {
     });
     const btnEraserWrapped = hotkeifyButtonWithLabel(btnEraser, 'E');
 
+    // const tileButtonCanvasAnimation = document.createElement('canvas');
 
-    const btnSelectTile = makeTileButton();
-
+    // const btnSelectTile = makeSimpleButton();
+    // btnSelectTile.appendChild(tileButtonCanvasAnimation);
+    // btnSelectTile.addEventListener('click', (e) => actions.reload?.(e.target as HTMLElement));
+    // const btnReloadWrapped = hotkeifyButtonWithLabel(btnReload, 'A', { setActiveForClickDuration: true });
 
     const btnSectionReload = makeButtonSection('reload', [btnReloadWrapped]);
     const btnSectionTools = makeButtonSection('tools', [btnBrushWrapped, btnEraserWrapped]);
-    const btnSectionTileSelector = makeButtonSection('tile-select', [btnSelectTile]);
-    btnSectionTileSelector.classList.add("align-right")
+    // const btnSectionTileSelector = makeButtonSection('tile-select', [btnSelectTile]);
+    // btnSectionTileSelector.classList.add("align-right")
 
 
     container.append(
