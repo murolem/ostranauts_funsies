@@ -1,6 +1,16 @@
-body {
-    --dock-area-size: 10rem;
+:root {
+    /* PROPS SET FROM SCRIPT START */
+    --btn-press-anim-duration: 0ms;
+    /* PROPS SET FROM SCRIPT END */
+}
 
+body {
+    --text-color: hsl(0, 0%, 95%);
+    --dock-area-size: 10rem;
+    
+    color: var(--text-color);
+    font-family: 'Comme', 'sans-serif';
+    
     margin: 0;
     overflow: hidden;
 
@@ -35,15 +45,17 @@ body {
     border: 1px solid gray;
 }
 
-.gui-container.dock-top    { 
+.gui-container.dock-top { 
     grid-area: 1 / 2 / 1 / 2; 
     flex-direction: row; 
     /* vertical */
-    align-items: center; 
+    align-items: flex-start; 
     
     margin: 1rem 0;
     border-radius: 1rem / 1.5rem;
     padding: 1.2rem 0.9rem;
+    padding-bottom: .5rem;
+
     height: fit-content;
     align-self: end;
     
@@ -81,27 +93,41 @@ button {
     justify-content: center;
     align-items: center;
     user-select: none;
+    position: relative;
 
     padding: var(--button-padding);
     background-color: #31302D;
-    overflow: hidden;
+    /* overflow: hidden; */
     
     border: none;
 
     box-shadow: -1px -1px 0px hsl(0, 0%, 95%),
     1px 1px 2px hsl(0, 0%, 0%, .3);
     
-    transition: all 125ms ease;
+    transition: all var(--btn-press-anim-duration) ease;
 
     & > .icon {
         width: calc(100% - var(--btn-padding) * 2);
         height: auto;
     }
 
+    &.active,
     &:active {
         box-shadow: var(--btn-sh-active-base);
         transform: scale(var(--btn-scale-onpress));
     }
+}
+
+.button-label-wrapping {
+    text-align: center;
+}
+
+.button-label-text {
+    display: inline-block;
+    margin-top: .35rem;
+    font-size: 1em;
+    font-weight: bold;
+    color: hsl(0, 0%, 55%);
 }
 
 .toggle-button:active,

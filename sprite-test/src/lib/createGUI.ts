@@ -3,8 +3,14 @@ import paintBrushIconBlack from '$src/icons/paint-brush-black.png';
 import eraserIconBlack from '$src/icons/eraser-black.png';
 import type { TileBrushMode } from '$lib/TileBrush';
 import type { Spritesheet } from '$lib/Spritesheet';
+import { registerKeybind, type HotkeyAction, type HotkeyKey } from '$lib/keybinds';
 
+const buttonActiveClass = "active";
 const toggleButtonToggledClass = "toggled";
+const buttonPressAnimationDurationMs = 125;
+
+const rootEl = document.querySelector(':root') as HTMLHtmlElement;
+rootEl.style.setProperty("--btn-press-anim-duration", buttonPressAnimationDurationMs + "ms");
 
 function make(htmlString: string): HTMLElement {
     var div = document.createElement('div');
@@ -28,6 +34,20 @@ function makeTileButton() {
     return make(`<button class="tile-button"></button>`) as HTMLButtonElement;
 }
 
+function makeButtonLabelElementAndWrap(btnEl: HTMLButtonElement, text: string, labelPos: 'above' | 'below') {
+    const el = make(`<label class="button-label-wrapping"></label>`);
+    const textEl = make(`<span class="button-label-text">${text}</span>`);
+    if (labelPos === 'above') {
+        el.append(textEl);
+        el.append(btnEl);
+    } else {
+        el.append(btnEl);
+        el.append(textEl);
+    }
+
+    return el as HTMLLabelElement;
+}
+
 function makeIcon(src: string, { invert = false } = {}) {
     return make(`<img src="${src}" class="icon${invert ? ' invert' : ''}">`);
 }
@@ -42,6 +62,25 @@ function makeButtonSection(name: string, els: HTMLElement[]) {
     container.append(...els);
     return container;
 }
+
+/**
+ * Adds a hotkey to a button, wrapping it into a label element with said hotkey below the button.
+ * @param btn
+ * @param hotkey 
+ * @param action 
+ */
+function hotkeifyButtonWithLabel(btn: HTMLButtonElement, hotkey: HotkeyKey, { setActiveForClickDuration = false } = {}): HTMLLabelElement {
+    registerKeybind(hotkey, () => {
+        btn.click();
+
+        if (setActiveForClickDuration) {
+            btn.classList.add(buttonActiveClass);
+            setTimeout(() => btn.classList.remove(buttonActiveClass), buttonPressAnimationDurationMs);
+        }
+    });
+    return makeButtonLabelElementAndWrap(btn, hotkey, 'below');
+}
+
 
 export type ActionSimple = (trigger: HTMLElement) => void
 export type ActionSelect<T> = (trigger: HTMLElement, selection: T) => void;
@@ -59,14 +98,25 @@ export default function (canvas: HTMLCanvasElement, actions: ActionMap) {
     const btnReload = makeSimpleButton();
     btnReload.appendChild(makeIcon(trashBinIconBlack, { invert: true }));
     btnReload.addEventListener('click', (e) => actions.reload?.(e.target as HTMLElement));
+    const btnReloadWrapped = hotkeifyButtonWithLabel(btnReload, 'A', { setActiveForClickDuration: true });
 
+    const runIfToggled = (toggleBtn: HTMLButtonElement, fn: (toggleBtn: HTMLButtonElement) => void) => {
+        if (toggleBtn.classList.contains(toggleButtonToggledClass))
+            fn(toggleBtn);
+    }
 
     let activeToolBtnElement: HTMLButtonElement | null = null;
-    const updateActiveToolBtnElement = (newActiveBtnEl: HTMLButtonElement): void => {
+    const updateToggleButtonState = (newActiveBtnEl: HTMLButtonElement): void => {
+        // if it's the same button, revert the toggle cuz we there should be tool selected at all times.
+        if (activeToolBtnElement && activeToolBtnElement === newActiveBtnEl) {
+            newActiveBtnEl.classList.add(toggleButtonToggledClass);
+            return;
+        }
+
+        // untoggle other button
         if (activeToolBtnElement
-            && activeToolBtnElement !== newActiveBtnEl
             && activeToolBtnElement.classList.contains(toggleButtonToggledClass))
-            activeToolBtnElement.click();
+            activeToolBtnElement.classList.remove(toggleButtonToggledClass);
 
         activeToolBtnElement = newActiveBtnEl;
     }
@@ -76,38 +126,39 @@ export default function (canvas: HTMLCanvasElement, actions: ActionMap) {
     btnBrush.addEventListener('click', (e) => {
         const el = e.target as HTMLButtonElement;
 
-        if (el.classList.contains(toggleButtonToggledClass))
-            actions.selectTool?.(el, 'brush');
-
-        updateActiveToolBtnElement(el);
+        updateToggleButtonState(el);
+        runIfToggled(el, el => actions.selectTool?.(el, 'brush'));
     });
-    btnBrush.click();
+    const btnBrushWrapped = hotkeifyButtonWithLabel(btnBrush, 'B');
 
     const btnEraser = makeToggleButton();
     btnEraser.appendChild(makeIcon(eraserIconBlack, { invert: true }));
     btnEraser.addEventListener('click', (e) => {
         const el = e.target as HTMLButtonElement;
 
-        if (el.classList.contains(toggleButtonToggledClass))
-            actions.selectTool?.(e.target as HTMLElement, 'eraser');
-
-        updateActiveToolBtnElement(el);
+        updateToggleButtonState(el);
+        runIfToggled(el, el => actions.selectTool?.(el, 'eraser'));
     });
+    const btnEraserWrapped = hotkeifyButtonWithLabel(btnEraser, 'E');
 
-    // const btnSelectTile = makeTileButton();
+
+    const btnSelectTile = makeTileButton();
 
 
-    const btnSectionReload = makeButtonSection('reload', [btnReload]);
-    const btnSectionTools = makeButtonSection('tools', [btnBrush, btnEraser]);
-    // const btnSelectionTile = makeButtonSection('tile-select', [btnSelectTile]);
-    // btnSelectionTile.classList.add("align-right")
+    const btnSectionReload = makeButtonSection('reload', [btnReloadWrapped]);
+    const btnSectionTools = makeButtonSection('tools', [btnBrushWrapped, btnEraserWrapped]);
+    const btnSectionTileSelector = makeButtonSection('tile-select', [btnSelectTile]);
+    btnSectionTileSelector.classList.add("align-right")
 
 
     container.append(
         btnSectionReload,
         btnSectionTools,
-        // btnSelectionTile
+        // btnSectionTileSelector
     );
 
     canvas.parentElement!.append(container);
+
+
+    btnBrush.click();
 }

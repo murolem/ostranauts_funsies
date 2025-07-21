@@ -1,5 +1,7 @@
-type Key = string;
-type KeyCode = number;
+// todo: split into keybind key (set of values from mapping below) and event key (can be anything (?))
+export type HotkeyKey = keyof typeof keyToKeyCodeMap;
+export type HotkeyKeyCode = number;
+export type HotkeyAction = (keys: string[], keyCodes: HotkeyKeyCode[]) => void;
 
 /** 
  * Maps keys (characters) to key codes (codes corresponding to keys on a keyboard). 
@@ -116,17 +118,53 @@ const keyToKeyCodeMap = {
     "?": 219,
     "°": 220,
     "Ä": 222
-} satisfies Record<Key, KeyCode>;
+} satisfies Record<string, number>;
 
 const keybinds: {
-    keys: Key[],
-    keyCodes: KeyCode[]
+    keys: HotkeyKey[],
+    keyCodes: HotkeyKeyCode[],
+    action: HotkeyAction
 }[] = [];
 
+const downKeys: {
+    key: string,
+    keyCode: HotkeyKeyCode
+}[] = [];
 
+function lookupKeycode(key: HotkeyKey): HotkeyKeyCode {
+    return keyToKeyCodeMap[key];
+}
 
-// window.addEventListener('keydown', e => e.key)
+window.addEventListener('keyup', e => {
+    // mark key is up
+    const matchingDownKeyIndex = downKeys.findIndex(entry => entry.keyCode === e.keyCode);
+    if (matchingDownKeyIndex !== -1)
+        downKeys.splice(matchingDownKeyIndex, 1);
+})
 
-// export function registerKeybind() {
+window.addEventListener('keydown', e => {
+    // mark key is down
+    const matchingDownKeyIndex = downKeys.findIndex(entry => entry.keyCode === e.keyCode);
+    if (matchingDownKeyIndex === -1)
+        downKeys.push({
+            key: e.key,
+            keyCode: e.keyCode
+        });
 
-// }
+    // check for keybinds
+    // todo: support multiple keys at once
+    const matchingKeybind = keybinds.find(kb => kb.keyCodes.includes(e.keyCode))
+    if (matchingKeybind)
+        matchingKeybind.action([e.key], [e.keyCode]);
+});
+
+// ==============
+
+// todo: support multiple keys at once
+export function registerKeybind(key: HotkeyKey, action: HotkeyAction): void {
+    keybinds.push({
+        keys: [key],
+        keyCodes: [key].map(lookupKeycode),
+        action
+    });
+}
