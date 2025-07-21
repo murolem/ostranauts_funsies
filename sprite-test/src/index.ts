@@ -5,7 +5,7 @@ import { Grid } from '$src/lib/Grid';
 import { TileBrush } from '$src/lib/TileBrush';
 import { Spritesheet } from '$src/lib/Spritesheet';
 import { pickRandomItem } from '$utils/rand/pickRandomItem';
-import createGUI from '$lib/createGUI';
+import createGUI from '$lib/gui';
 
 if (Object.keys(ssIndexToTilingMap).length !== ssSizeTilesTotal)
     throw new Error(`mismatch between configuring spritesheet size and tiles and defined mappings: ss size set to ${ssSizeTilesTotal} tiles, while index mappings configured for ${Object.keys(ssIndexToTilingMap).length} tiles`);
