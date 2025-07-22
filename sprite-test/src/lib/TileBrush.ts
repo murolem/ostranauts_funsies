@@ -31,6 +31,9 @@ export class TileBrush {
     }
 
     tryApplyAt(tilePos: TilePosition): void {
+        if (!this._grid.isTilePositionWithinGrid(tilePos))
+            return;
+
         const cardinalNeighbors = this._grid.getCardinalNeighbors(tilePos);
 
         switch (this.mode) {
