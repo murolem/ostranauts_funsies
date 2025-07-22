@@ -12,7 +12,10 @@ export function hotkeifyButtonWithLabel(
     btn: HTMLButtonElement,
     hotkey: HotkeyKey, {
         setActiveForClickDuration = false
-    } = {}
+    }: Partial<{
+        /** If enabled, an "active" class will be added to the button, mimicking a button press behavior for a short time (if such is defined). */
+        setActiveForClickDuration: boolean
+    }> = {}
 ): HTMLLabelElement {
     registerKeybind(hotkey, () => {
         btn.click();

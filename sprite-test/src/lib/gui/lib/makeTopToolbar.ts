@@ -15,8 +15,11 @@ import type { SizePx } from '$src/types';
 import { randomInRange } from '$utils/rand/randomInRange';
 import { generateBezierFromSketch } from '$utils/generateBezierFromSketch';
 import { getObjPropOrCreate } from '$utils/getObjPropOrCreate';
-import { waitForNodeAppendToDocument } from '$lib/gui/lib/utils/waitForNodeAppendToDocument';
-import { guiBuiltEventName, guiEventEmitter } from '$lib/gui/event';
+import { guiEventGuiBuilt, guiEventEmitter } from '$lib/gui/event';
+import { toggleButtonToggledOnColorConf } from '$lib/gui/preset';
+import { map } from '$utils/map';
+import { make } from '$lib/gui/make';
+import { toggleTileSelectionWindow } from '$lib/gui/lib/makeTileSelectionWindow';
 
 function makeReloadButton(actions: ActionMap): ButtonOrWrapped {
     const btnReload = makeSimpleButton();
@@ -46,11 +49,13 @@ function makeToolButton(
 /**
  * do not even ask me what this is OvO
  */
-function makeTileButton(): ButtonOrWrapped {
+function makeTileButton(actions: ActionMap): ButtonOrWrapped {
     const btnSelectTile = makeToggleButton(["button-tile"]);
-    guiEventEmitter.addListener(guiBuiltEventName, () => initTileButtonLogic(btnSelectTile));
+    guiEventEmitter.addListener(guiEventGuiBuilt, () => initTileButtonLogic(btnSelectTile));
 
-    return btnSelectTile;
+    addEventListenerToggleButtonToggled(btnSelectTile, (_, toggleState) => toggleTileSelectionWindow(actions, toggleState));
+
+    return hotkeifyButtonWithLabel(btnSelectTile, 'T');
 }
 
 function initTileButtonLogic(btn: HTMLButtonElement) {
@@ -69,11 +74,17 @@ function initTileButtonLogic(btn: HTMLButtonElement) {
         h: btn.clientHeight + parseFloat(btnCompStyle.paddingTop) + parseFloat(btnCompStyle.paddingBottom)
     }
 
-    const pixelSize = Math.min(clientSizeNoPad.w, clientSizeNoPad.h) / pixelsPerSide;
+    const pixelSize = Math.floor(Math.min(clientSizeNoPad.w, clientSizeNoPad.h) / pixelsPerSide);
 
     canvas.width = pixelSize * pixelsPerSide;
     canvas.height = pixelSize * pixelsPerSide;
     const ctx = canvas.getContext('2d')!;
+
+    let useColor = false;
+
+    addEventListenerToggleButtonToggled(btn, (_, toggleState) => {
+        useColor = toggleState;
+    })
 
     // =====
 
@@ -147,7 +158,7 @@ function initTileButtonLogic(btn: HTMLButtonElement) {
                                                 
                                         
         x             x
-        `);
+`);
 
 
     const draw = (prevTs: number) => {
@@ -176,7 +187,9 @@ function initTileButtonLogic(btn: HTMLButtonElement) {
 
                 // draw
                 const brightness01 = conf.sample(sampleBrightnessChangeCurve(conf.t));
-                ctx.fillStyle = `hsl(0, 0%, 55%,  ${brightness01})`;
+                ctx.fillStyle = useColor
+                    ? `hsl(${toggleButtonToggledOnColorConf.h}, ${toggleButtonToggledOnColorConf.s}%, ${toggleButtonToggledOnColorConf.l * map(brightness01, 0, 1, 0.4, 1)}%)`
+                    : `hsl(0, 0%, 55%,  ${brightness01})`;
 
                 ctx.fillRect(col * pixelSize, row * pixelSize, pixelSize, pixelSize);
 
@@ -189,6 +202,17 @@ function initTileButtonLogic(btn: HTMLButtonElement) {
 
     btn.append(canvas);
     requestAnimationFrame(draw);
+}
+
+function makeDisplayScreen() {
+    const el = make(`<img class="screen">`) as HTMLImageElement;
+
+    return {
+        el,
+        setImage(src: string): void {
+            el.src = src;
+        }
+    }
 }
 
 export function makeTopToolbarEl(actions: ActionMap): HTMLElement {
@@ -214,6 +238,8 @@ export function makeTopToolbarEl(actions: ActionMap): HTMLElement {
 
     bindExclusiveSelectionToToggleButtons(toolButtons.map(unwrapButton));
 
+    // const tileDisplayScreen = makeDisplayScreen();
+
     toolbar.append(
         makeButtonSection('reload', [
             makeReloadButton(actions)
@@ -222,7 +248,8 @@ export function makeTopToolbarEl(actions: ActionMap): HTMLElement {
             toolButtons
         ),
         makeButtonSection('tile-select', [
-            makeTileButton()
+            makeTileButton(actions),
+            // tileDisplayScreen.el
         ])
     );
 

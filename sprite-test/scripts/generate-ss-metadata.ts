@@ -24,6 +24,7 @@ for (const relFilepath of readFilesRecursive(spritesheetsDirpath)) {
         continue
 
     metadata.push({
+        ssName: "Core_" + path.parse(relFilepath).name,
         relPath: relFilepath
     })
 }

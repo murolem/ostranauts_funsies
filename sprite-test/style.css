@@ -1,7 +1,14 @@
+* {
+    box-sizing: border-box;
+}
+
 :root {
     /* PROPS SET FROM SCRIPT START */
     --btn-press-anim-duration: 0ms;
+    --toggle-col: gray;
     /* PROPS SET FROM SCRIPT END */
+
+    --tileset-base-size: 64px;
 }
 
 body {
@@ -83,7 +90,7 @@ body {
     gap: 1rem;
 }
 
-button {
+button:not(.no-make-style) {
     all: unset;
 
     --btn-padding: 0.6rem;
@@ -92,6 +99,8 @@ button {
     --btn-scale-onpress: 95%;
     --btn-size-to-border-radius-ratio: 3;
     --btn-size: 3.25rem;
+
+    cursor: pointer;
 
     width: var(--btn-size);
     height: var(--btn-size);
@@ -136,11 +145,12 @@ button {
     font-size: 1em;
     font-weight: bold;
     color: hsl(0, 0%, 55%);
+    user-select: none;
 }
 
-.toggle-button:active,
-.toggle-button.toggled {
-    --toggle-col: #fe8227;
+/* double selector to take precedence over the :not selector on the button  */
+.toggle-button.toggle-button:active,
+.toggle-button.toggle-button.toggled {
 	--sh-size: 0px;
 	--sh-blur: 12px;
 	--sh-spread: 4px;
@@ -170,4 +180,206 @@ button {
 
 .tile-button {
     
+}
+
+.tile-selection-window {
+    --theme-col: var(--toggle-col);
+    --bg-col: color-mix(in srgb, var(--theme-col) 50%, black);
+    --border: 5px solid var(--theme-col);
+    --tile-selection-win-right-shadow-size: 10px;
+    --tile-selection-win-right-offset: 2rem;
+    --tile-selection-win-right-offset-with-shadow: calc(var(--tile-selection-win-right-shadow-size) + var(--tile-selection-win-right-offset));
+
+    position: absolute;
+    z-index: 10;
+    top: 5rem;
+
+    display: grid;
+    grid-template-areas:
+        "header     header"
+        "sidebar    explorer"
+        "sidebar    explorer";
+
+    background-color: var(--bg-col);
+    border: var(--border);
+
+    box-shadow: 0 0 6px 3px color-mix(in srgb, var(--theme-col), transparent 75%),
+        10px 0 12px color-mix(in srgb, var(--theme-col), transparent 75%);
+
+    transition: transform 150ms ease;
+
+    &:not(.active) {
+        transform: translateX(100%);
+        right: calc(var(--tile-selection-win-right-offset-with-shadow) * -1);
+        /* visibility: hidden; */
+    }
+    &.active {
+        right: var(--tile-selection-win-right-offset);
+    }
+}
+
+.tile-selection-window > .header {
+    grid-area: header;
+
+    padding: 0.2rem .5rem;
+
+    font-family: 'Jura';
+    font-size: x-large;
+    font-weight: bold;
+
+    border-bottom: var(--border);
+    text-align: center;
+}
+
+.tile-selection-window > .sidebar {
+    grid-area: sidebar;
+
+    display: grid;
+    /* grid-template-columns: 7rem; */
+    /* grid-auto-rows: auto 2rem; */
+    grid-template-areas:
+        "sidebar-folders"
+        "sidebar-upload";
+
+    background-color: color-mix(in srgb, var(--bg-col) 75%, black);
+    border-right: var(--border);
+}
+
+.tile-selection-window > .sidebar > .sidebar-folders {
+    grid-area: sidebar-folders;
+
+    display: flex;
+    flex-direction: column;
+
+    padding: 0.4rem 0;
+}
+
+.sidebar-folders > button.folder {
+    all: unset;
+
+    user-select: none;
+    cursor: pointer;
+    
+    display: inline-block;
+    padding: 0.2rem 0.5rem;
+    text-align: center;
+
+    &.toggled {
+        background-color: var(--theme-col);
+    }
+}
+
+@keyframes sidebar-upload-bracket-flicker {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.tile-selection-window > .sidebar > .sidebar-upload {
+    grid-area: sidebar-upload;
+
+    visibility: hidden;
+
+    border-top: var(--border);
+    
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    width: 100%;
+    aspect-ratio: 1;
+
+    font-size: large;
+    font-weight: bold;
+
+    & .bracket {
+        user-select: none;
+        font-size: x-large;
+
+        animation: sidebar-upload-bracket-flicker 1000ms infinite steps(2, jump-none);
+    }
+}
+
+
+.tile-selection-window > .explorer {
+    grid-area: explorer;
+
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+
+    height: 30rem;
+    overflow: auto;
+
+    padding: 1rem;
+
+    background-color: color-mix(in srgb, var(--bg-col) 90%, white);
+}
+
+.explorer .tileset-label-wrapping {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+
+    max-width: 12rem;
+
+    outline: 1px dashed transparent;
+    outline-offset: 7px;
+    transition: 
+        outline 100ms ease-in,
+        outline-offset 500ms ease-in;
+
+    &:hover {
+        outline: 1px dashed white;
+        outline-offset: 5px;
+        
+        transition: 
+        outline 100ms ease-out,
+        outline-offset 200ms ease-out;
+    }
+    
+    &.selected {
+        transition: outline 0ms, outline-offset 0ms;
+        outline: var(--border);
+        outline-offset: 5px;
+        
+        &:hover {
+            transition: outline 0ms, outline-offset 0ms;
+            outline: var(--border);
+            outline-offset: 5px;
+        }
+    }
+
+
+    & > .label {
+        word-break: break-all;
+        font-family: monospace;
+        font-size: 1.1em;
+        cursor: auto;
+    }
+
+    & > .tileset,
+    & > .tileset-placeholder {
+        aspect-ratio: 1;
+        width: calc(2 * var(--tileset-base-size));
+        height: auto;
+        user-select: none;
+    }
+    
+    & > .tileset {
+        image-rendering: pixelated;
+        cursor: pointer;
+
+        background: repeating-conic-gradient(hsl(0, 0%, 25%, 0.50) 0 25%, #0000 0 50%) 50% / 20px 20px;
+        background-color: white;
+    }
+
+    & > .tileset-placeholder {
+        background-color: color-mix(in srgb, var(--bg-col) 80%, black);
+    }
 }

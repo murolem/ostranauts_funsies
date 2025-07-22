@@ -249,7 +249,7 @@ x             x
                 y: tilePos.y * tileScaledSizePx,
             }
 
-            const ssRegionToDraw = brush.tileset.calculateSpritesheetTileRegion(tileConfiguration);
+            const ssRegionToDraw = tileConfiguration.ss.calculateSpritesheetTileRegion(tileConfiguration.tiling);
 
             ctx.save();
             ctx.translate(pxPos.x, pxPos.y);
@@ -261,7 +261,7 @@ x             x
 
             // console.log("drawing region: " + JSON.stringify(ssRegionToDraw))
             ctx.drawImage(
-                brush.tileset.image,
+                tileConfiguration.ss.image,
                 ssRegionToDraw.x, ssRegionToDraw.y, ssRegionToDraw.w, ssRegionToDraw.h,
                 0, 0, tileScaledSizePx, tileScaledSizePx
             );

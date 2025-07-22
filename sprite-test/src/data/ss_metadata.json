@@ -1,116 +1,146 @@
 [
     {
+        "ssName": "Core_ItmSealTemp01Sheet",
         "relPath": "ItmSealTemp01Sheet.png"
     },
     {
-        "relPath": "ItmWallBlueCaution01Loose.png"
-    },
-    {
+        "ssName": "Core_ItmWallBlueCaution01Sheet",
         "relPath": "ItmWallBlueCaution01Sheet.png"
     },
     {
+        "ssName": "Core_ItmWallGrayBevel01Sheet",
         "relPath": "ItmWallGrayBevel01Sheet.png"
     },
     {
+        "ssName": "Core_ItmWallGrayCaution01Sheet",
         "relPath": "ItmWallGrayCaution01Sheet.png"
     },
     {
+        "ssName": "Core_ItmWallGrayPanel01Sheet",
         "relPath": "ItmWallGrayPanel01Sheet.png"
     },
     {
+        "ssName": "Core_ItmWallGreenCross01Sheet",
         "relPath": "ItmWallGreenCross01Sheet.png"
     },
     {
+        "ssName": "Core_ItmWallGreenRing01Sheet",
         "relPath": "ItmWallGreenRing01Sheet.png"
     },
     {
+        "ssName": "Core_ItmWallMetalBSheet",
         "relPath": "ItmWallMetalBSheet.png"
     },
     {
+        "ssName": "Core_ItmWallPanelWSheet",
         "relPath": "ItmWallPanelWSheet.png"
     },
     {
+        "ssName": "Core_ItmWallPurpleCross01Sheet",
         "relPath": "ItmWallPurpleCross01Sheet.png"
     },
     {
+        "ssName": "Core_ItmWallRedBand01Sheet",
         "relPath": "ItmWallRedBand01Sheet.png"
     },
     {
+        "ssName": "Core_ItmWallRedCross01Sheet",
         "relPath": "ItmWallRedCross01Sheet.png"
     },
     {
-        "relPath": "ItmWallSheet.png"
-    },
-    {
+        "ssName": "Core_ItmWallTanOrange01Sheet",
         "relPath": "ItmWallTanOrange01Sheet.png"
     },
     {
+        "ssName": "Core_ItmWallThin1x1BlueSheet",
         "relPath": "ItmWallThin1x1BlueSheet.png"
     },
     {
+        "ssName": "Core_ItmWallThin1x1GrayCautionSheet",
         "relPath": "ItmWallThin1x1GrayCautionSheet.png"
     },
     {
+        "ssName": "Core_ItmWallThin1x1GrayCautionSheet02",
         "relPath": "ItmWallThin1x1GrayCautionSheet02.png"
     },
     {
+        "ssName": "Core_ItmWallThin1x1GraySheet",
         "relPath": "ItmWallThin1x1GraySheet.png"
     },
     {
+        "ssName": "Core_ItmWallThin1x1GreenSheet",
         "relPath": "ItmWallThin1x1GreenSheet.png"
     },
     {
+        "ssName": "Core_ItmWallThin1x1OrangeSheet",
         "relPath": "ItmWallThin1x1OrangeSheet.png"
     },
     {
+        "ssName": "Core_ItmWallThin1x1RedSheet",
         "relPath": "ItmWallThin1x1RedSheet.png"
     },
     {
+        "ssName": "Core_ItmWallThin1x1YellowSheet",
         "relPath": "ItmWallThin1x1YellowSheet.png"
     },
     {
+        "ssName": "Core_ItmWallWhiteCross01Sheet",
         "relPath": "ItmWallWhiteCross01Sheet.png"
     },
     {
+        "ssName": "Core_ItmWallWindowSheet",
         "relPath": "ItmWallWindowSheet.png"
     },
     {
+        "ssName": "Core_ItmWallWindowSheetSq",
         "relPath": "ItmWallWindowSheetSq.png"
     },
     {
+        "ssName": "Core_ItmWallYellowCaution01Sheet",
         "relPath": "ItmWallYellowCaution01Sheet.png"
     },
     {
+        "ssName": "Core_ItmWallAeroSheet",
         "relPath": "AeroParts/ItmWallAeroSheet.png"
     },
     {
+        "ssName": "Core_ItmWallAeroSheetSq",
         "relPath": "AeroParts/ItmWallAeroSheetSq.png"
     },
     {
+        "ssName": "Core_ItmWallAeroExtWhite01Sheet",
         "relPath": "ItmFloorGrate12A/ItmWallAeroExtWhite01Sheet.png"
     },
     {
+        "ssName": "Core_ItmWallAeroInt01Sheet",
         "relPath": "ItmFloorGrate12A/ItmWallAeroInt01Sheet.png"
     },
     {
+        "ssName": "Core_ItmWallAeroInt02Sheet",
         "relPath": "ItmFloorGrate12A/ItmWallAeroInt02Sheet.png"
     },
     {
+        "ssName": "Core_ItmWallAeroInt03Sheet",
         "relPath": "ItmFloorGrate12A/ItmWallAeroInt03Sheet.png"
     },
     {
+        "ssName": "Core_ItmWallAeroInt04Sheet",
         "relPath": "ItmFloorGrate12A/ItmWallAeroInt04Sheet.png"
     },
     {
+        "ssName": "Core_ItmMeat01EyeSheet",
         "relPath": "Meat01/ItmMeat01EyeSheet.png"
     },
     {
+        "ssName": "Core_ItmMeat01HoofSheet",
         "relPath": "Meat01/ItmMeat01HoofSheet.png"
     },
     {
+        "ssName": "Core_ItmMeat01HornSheet",
         "relPath": "Meat01/ItmMeat01HornSheet.png"
     },
     {
+        "ssName": "Core_ItmMeat01Sheet",
         "relPath": "Meat01/ItmMeat01Sheet.png"
     }
 ]

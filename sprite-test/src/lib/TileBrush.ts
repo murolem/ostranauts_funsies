@@ -12,6 +12,11 @@ export class TileBrush {
 
     private mode: TileBrushMode = 'brush';
 
+    /**
+     * 
+     * @param _grid Grid to attach the brush to.
+     * @param _tileset A tileset to use initially with the brush.
+     */
     constructor(
         private _grid: Grid,
         private _tileset: Spritesheet
@@ -26,10 +31,6 @@ export class TileBrush {
     }
 
     tryApplyAt(tilePos: TilePosition): void {
-        // attempting to draw outside of bounds = skip
-        if (!this._grid.isTilePositionWithinGrid(tilePos))
-            return;
-
         const cardinalNeighbors = this._grid.getCardinalNeighbors(tilePos);
 
         switch (this.mode) {
@@ -58,18 +59,14 @@ export class TileBrush {
 
             const neighborCardinalNeighbors = this._grid.getCardinalNeighbors(neighborTilePos);
             const neighborTiling = this._tileset.convertCardinalNeighborsToTiling(neighborCardinalNeighbors);
-            this._grid.set(neighborTilePos, neighborTiling);
+            this._grid.set(neighborTilePos, { ss: neighborTile.ss, tiling: neighborTiling });
         }
     }
 
     private applyBrushMode(tilePos: TilePosition, cardinalNeighbors: Record<CardinalDirection, GridTile>) {
-        // if tile is already drawn do nothing
-        if (this._grid.hasAt(tilePos))
-            return;
-
         // update us
         const tiling = this._tileset.convertCardinalNeighborsToTiling(cardinalNeighbors);
-        this._grid.set(tilePos, tiling);
+        this._grid.set(tilePos, { ss: this.tileset, tiling: tiling });
     }
 
     private applyEraserMode(tilePos: TilePosition) {

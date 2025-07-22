@@ -6,6 +6,7 @@ import { TileBrush } from '$src/lib/TileBrush';
 import { Spritesheet } from '$src/lib/Spritesheet';
 import { pickRandomItem } from '$utils/rand/pickRandomItem';
 import createGUI from '$lib/gui';
+import { emitGuiEventInitialTilesetSet, emitGuiEventSpritesheetsLoaded, guiEventEmitter, guiEventInitialTilesetSet } from '$lib/gui/event';
 
 if (Object.keys(ssIndexToTilingMap).length !== ssSizeTilesTotal)
     throw new Error(`mismatch between configuring spritesheet size and tiles and defined mappings: ss size set to ${ssSizeTilesTotal} tiles, while index mappings configured for ${Object.keys(ssIndexToTilingMap).length} tiles`);
@@ -20,10 +21,10 @@ const ctx = canvas.getContext('2d')!; // !explicit assertion; asserted next line
 if (!ctx)
     throw new Error("2d rendering context unsupported");
 
-const spritesheets = await Spritesheet.loadDefault();
-// console.log(spritesheets)
+const randomCoreSs = await Spritesheet.loadRandomCoreTileset();
+const spritesheetsPromise = Spritesheet.loadCoreTilesets();
 const grid = new Grid(canvas, ctx);
-const brush = new TileBrush(grid, pickRandomItem(spritesheets));
+const brush = new TileBrush(grid, randomCoreSs);
 // const brush = new TileBrush(grid, spritesheets.find(ss => ss.filename === "ItmWallThin1x1YellowSheet.png")!);
 
 // =====
@@ -44,8 +45,12 @@ canvas.addEventListener('mousemove', (e) => {
 createGUI(canvas, {
     reload: trigger => { grid.clear(); },
     selectTool: (trigger, tool) => { brush.setMode(tool) },
-    selectTileset: (trigger, tileset) => { },
+    selectTileset: (trigger, tileset) => { brush.setTileset(tileset) },
 });
+
+emitGuiEventInitialTilesetSet(brush.tileset);
+spritesheetsPromise
+    .then(spritesheets => emitGuiEventSpritesheetsLoaded(spritesheets));
 
 function draw() {
     ctx.save();

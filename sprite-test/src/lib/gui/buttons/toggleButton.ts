@@ -18,9 +18,13 @@ function emitToggleEvent(btn: HTMLButtonElement, toggledOn: boolean): void {
     ee.emit(toggleEventName, eventArgs);
 }
 
-export function makeToggleButton(classNames?: string[]): HTMLButtonElement {
+export function makeToggleButton(classNames?: string[], contents?: HTMLElement | string): HTMLButtonElement {
     const btn = make(`<button class="toggle-button ${classNames ? classNames.join(" ") : ""}"></button>`) as HTMLButtonElement;
+    if (contents !== undefined)
+        btn.append(contents);
+
     btn.addEventListener('click', () => setToggleButtonToggle(btn, !isToggleButtonToggledOn(btn)));
+
     return btn;
 }
 

@@ -7,84 +7,117 @@ import { Logger } from '$logger';
 import { convertIndexToXyPosition } from '$src/lib/converters';
 import type { GridTile } from '$lib/Grid';
 import { Tiling, tilingToSsIndexMap } from '$lib/mappings';
+import { pickRandomItem } from '$utils/rand/pickRandomItem';
 const logger = new Logger("lib/spritesheets");
 const { logFatal } = logger;
 
 const ssMetadata = ssMetadataUntyped as SpritesheetMetadata[];
-// console.log(ssMetadata);
 
-/** Binary mask configuration for a tile. */
-export type TileConfiguration = number;
+/** Name for a particular spritesheet */
+export type SsName = string;
 
 /** Tile index within a spritesheet. */
 export type SsTileIndex = number;
+
+/** Binary mask configuration for a tile. */
+export type TilingConfiguration = number;
+
+/** Configuration for a tile. */
+export type TileConfiguration = {
+    ss: Spritesheet,
+    tiling: TilingConfiguration,
+};
 
 /** Pixel position of a region within a spritesheet. */
 export type SsRegionPosition = Position;
 
 export type SpritesheetMetadata = {
+    /** Name for a spritesheet. */
+    ssName: string,
+
     /** Path to a spritesheet relative to the spritesheets' directory. */
     relPath: string
 }
 
-
 export class Spritesheet {
-    get relUrlFilepath() { return this._relUrlFilepath; }
-
-    get filename() { return this._filename; }
+    get name() { return this._name; }
 
     get image() { return this._image; }
 
+    get imageUrl() { return this._imageUrl; }
+
     /**
-     * 
-     * @param _relUrlFilepath URL filepath relative to the spritesheets directory.
-     * @param _filename 
+     * @param _name
      * @param _image 
+     * @param _imageUrl 
      */
     constructor(
-        private _relUrlFilepath: string,
-        private _filename: string,
-        private _image: ImageBitmap
+        private _name: SsName,
+        private _image: ImageBitmap,
+        private _imageUrl: string
     ) { }
 
-    /** Loads all default spritesheets. */
-    static async loadDefault(): Promise<Spritesheet[]> {
+    isEqual(other: Spritesheet): boolean {
+        return this.imageUrl === other.imageUrl;
+    }
+
+    /** 
+     * Loads a random default spritesheet.
+    */
+    static async loadRandomCoreTileset(): Promise<Spritesheet> {
+        const ssMeta = pickRandomItem(ssMetadata);
+        const ssUrlRelPath = `${spritesheetsUrlDirpath}/${ssMeta.relPath}`;
+        return await this.loadTileset(ssUrlRelPath, ssMeta.ssName);
+    }
+
+    /** 
+     * Loads all default spritesheets.
+    */
+    static async loadCoreTilesets(): Promise<Spritesheet[]> {
         const promises: Promise<any>[] = [];
         for (const ssMeta of ssMetadata) {
             const relFilepath = `${spritesheetsUrlDirpath}/${ssMeta.relPath}`;
 
-            const promise = fetch(relFilepath)
-                .then(res => res.blob())
-                .then(createImageBitmap)
-                .then(bitmap => {
-                    const ss = new Spritesheet(
-                        relFilepath,
-                        path.parse(ssMeta.relPath).base,
-                        bitmap
-                    );
-
-                    return ss;
-                })
-                .catch(err => {
-                    logFatal({
-                        msg: "error while loading spritesheets",
-                        throw: true,
-                        data: {
-                            spritesheet: relFilepath,
-                            error: err
-                        }
-                    });
-                    throw ''//type guard
-                });
-
+            const promise = this.loadTileset(relFilepath, ssMeta.ssName);
             promises.push(promise);
 
             await wait(25);
         }
 
-        return Promise.all(promises);
+        return await Promise.all(promises);
     }
 
+    /**
+     * Loads a spritesheet from a url under specified name.
+     * @param url 
+     * @param name 
+     */
+    static async loadTileset(url: string, name: string): Promise<Spritesheet> {
+        return await fetch(url)
+            .then(res => res.blob())
+            .then(createImageBitmap)
+            .then(bitmap => {
+                const ss = new Spritesheet(
+                    name,
+                    bitmap,
+                    url
+                );
+
+                return ss;
+            })
+            .catch(err => {
+                logFatal({
+                    msg: "error while loading a spritesheet",
+                    throw: true,
+                    data: {
+                        url,
+                        name,
+                        error: err
+                    }
+                });
+                throw ''//type guard
+            });
+    }
 
     /**
      * Converts spritesheet tile index to a a tile position within the spritesheet.
@@ -101,7 +134,7 @@ export class Spritesheet {
      * Given a tiling configuration, find a matching tile and returns its region within the spritesheet.
      * @param ssIndex 
      */
-    calculateSpritesheetTileRegion(tiling: TileConfiguration): Region {
+    calculateSpritesheetTileRegion(tiling: TilingConfiguration): Region {
         const ssIndex = tilingToSsIndexMap[tiling];
         const tilePos = this.convertSsIndexToSsTilePosition(ssIndex);
 
@@ -114,8 +147,8 @@ export class Spritesheet {
     }
 
     /** Converts a map of neighboring tiles into a tiling configuration for a tile at the center. */
-    convertCardinalNeighborsToTiling(cardinalNeighbors: Record<CardinalDirection, GridTile>): TileConfiguration {
-        let res: TileConfiguration = Tiling.none;
+    convertCardinalNeighborsToTiling(cardinalNeighbors: Record<CardinalDirection, GridTile>): TilingConfiguration {
+        let res: TilingConfiguration = Tiling.none;
         for (const [dirUntyped, neighborTile] of Object.entries(cardinalNeighbors)) {
             const dir = dirUntyped as keyof typeof cardinalNeighbors;
             if (neighborTile !== undefined)
