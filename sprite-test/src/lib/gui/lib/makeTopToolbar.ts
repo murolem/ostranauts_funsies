@@ -15,11 +15,11 @@ import type { SizePx } from '$src/types';
 import { randomInRange } from '$utils/rand/randomInRange';
 import { generateBezierFromSketch } from '$utils/generateBezierFromSketch';
 import { getObjPropOrCreate } from '$utils/getObjPropOrCreate';
-import { guiEventGuiBuilt, guiEventEmitter } from '$lib/gui/event';
+import { guiEventGuiBuilt, guiEventEmitter, addListenerGuiEventBrushTilesetChanged } from '$lib/gui/event';
 import { toggleButtonToggledOnColorConf } from '$lib/gui/preset';
 import { map } from '$utils/map';
 import { make } from '$lib/gui/make';
-import { toggleTileSelectionWindow } from '$lib/gui/lib/makeTileSelectionWindow';
+import { isTilesetSelectionWindowOpen, toggleTileSelectionWindow } from '$lib/gui/lib/makeTileSelectionWindow';
 
 function makeReloadButton(actions: ActionMap): ButtonOrWrapped {
     const btnReload = makeSimpleButton();
@@ -204,15 +204,23 @@ function initTileButtonLogic(btn: HTMLButtonElement) {
     requestAnimationFrame(draw);
 }
 
-function makeDisplayScreen() {
-    const el = make(`<img class="screen">`) as HTMLImageElement;
+function makeTileDisplayScreen(tileButton: HTMLElement) {
+    const el = make(`<img draggable="false" class="tile-screen">`) as HTMLImageElement;
+    addListenerGuiEventBrushTilesetChanged(newTileset => el.src = newTileset.imageUrl);
+    addListenerGuiEventBrushTilesetChanged(newTileset => el.src = newTileset.imageUrl);
+    el.addEventListener('click', () => {
+        if (!isTilesetSelectionWindowOpen())
+            tileButton.click();
+    });
 
-    return {
-        el,
-        setImage(src: string): void {
-            el.src = src;
-        }
-    }
+    return el;
+
+    // return {
+    //     el,
+    //     setImage(src: string): void {
+    //         el.src = src;
+    //     }
+    // }
 }
 
 export function makeTopToolbarEl(actions: ActionMap): HTMLElement {
@@ -238,7 +246,8 @@ export function makeTopToolbarEl(actions: ActionMap): HTMLElement {
 
     bindExclusiveSelectionToToggleButtons(toolButtons.map(unwrapButton));
 
-    // const tileDisplayScreen = makeDisplayScreen();
+
+    const tileButton = makeTileButton(actions);
 
     toolbar.append(
         makeButtonSection('reload', [
@@ -248,8 +257,8 @@ export function makeTopToolbarEl(actions: ActionMap): HTMLElement {
             toolButtons
         ),
         makeButtonSection('tile-select', [
-            makeTileButton(actions),
-            // tileDisplayScreen.el
+            tileButton,
+            makeTileDisplayScreen(tileButton)
         ])
     );
 

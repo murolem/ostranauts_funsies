@@ -4,9 +4,8 @@ import { ssSizeTilesTotal } from '$preset';
 import { Grid } from '$src/lib/Grid';
 import { TileBrush } from '$src/lib/TileBrush';
 import { Spritesheet } from '$src/lib/Spritesheet';
-import { pickRandomItem } from '$utils/rand/pickRandomItem';
 import createGUI from '$lib/gui';
-import { emitGuiEventInitialTilesetSet, emitGuiEventSpritesheetsLoaded, guiEventEmitter, guiEventInitialTilesetSet } from '$lib/gui/event';
+import { emitGuiEventBrushTilesetChanged, emitGuiEventInitialTilesetSet, emitGuiEventSpritesheetsLoaded } from '$lib/gui/event';
 
 if (Object.keys(ssIndexToTilingMap).length !== ssSizeTilesTotal)
     throw new Error(`mismatch between configuring spritesheet size and tiles and defined mappings: ss size set to ${ssSizeTilesTotal} tiles, while index mappings configured for ${Object.keys(ssIndexToTilingMap).length} tiles`);
@@ -49,6 +48,7 @@ createGUI(canvas, {
 });
 
 emitGuiEventInitialTilesetSet(brush.tileset);
+emitGuiEventBrushTilesetChanged(brush.tileset);
 spritesheetsPromise
     .then(spritesheets => emitGuiEventSpritesheetsLoaded(spritesheets));
 

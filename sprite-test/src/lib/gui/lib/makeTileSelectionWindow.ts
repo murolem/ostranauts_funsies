@@ -203,6 +203,13 @@ export function isTilesetSelectionWindowCreated(): boolean {
     return !!tileSelectionWindow;
 }
 
+export function isTilesetSelectionWindowOpen(): boolean {
+    return tileSelectionWindow
+        ? tileSelectionWindow.classList.contains(tileSelectionWindowClassActive)
+        : false;
+}
+
+
 function assertTilesetSelectionWindowCreated(): void {
     if (!isTilesetSelectionWindowCreated())
         throw new Error("failed assert isTilesetSelectionWindowCreated");

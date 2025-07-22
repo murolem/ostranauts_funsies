@@ -17,3 +17,11 @@ export const guiEventSpritesheetsLoaded = "spritesheets-loaded";
 export function emitGuiEventSpritesheetsLoaded(spritesheets: Spritesheet[]): void {
     guiEventEmitter.emit(guiEventSpritesheetsLoaded, spritesheets);
 }
+
+export const guiEventBrushTilesetChanged = "tileset-changed";
+export function emitGuiEventBrushTilesetChanged(newTileset: Spritesheet): void {
+    guiEventEmitter.emit(guiEventBrushTilesetChanged, newTileset);
+}
+export function addListenerGuiEventBrushTilesetChanged(cb: (newTileset: Spritesheet) => void): void {
+    guiEventEmitter.addListener(guiEventBrushTilesetChanged, cb);
+}

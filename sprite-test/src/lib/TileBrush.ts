@@ -1,3 +1,4 @@
+import { emitGuiEventBrushTilesetChanged } from '$lib/gui/event';
 import type { Grid, GridTile } from '$src/lib/Grid';
 import { cardinalDirectionsToOffsetsMap } from '$src/lib/mappings';
 import type { Spritesheet } from '$src/lib/Spritesheet';
@@ -24,6 +25,7 @@ export class TileBrush {
 
     setTileset(tileset: Spritesheet): void {
         this._tileset = tileset;
+        emitGuiEventBrushTilesetChanged(tileset);
     }
 
     setMode(mode: TileBrushMode) {

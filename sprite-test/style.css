@@ -383,3 +383,26 @@ button:not(.no-make-style) {
         background-color: color-mix(in srgb, var(--bg-col) 80%, black);
     }
 }
+
+.tile-screen {
+    aspect-ratio: 1;
+    height: 64px;
+    width: auto;
+    user-select: none;
+
+    background: repeating-conic-gradient(hsl(0, 0%, 25%, 0.50) 0 25%, #0000 0 50%) 50% / 20px 20px;
+    background-color: white;
+
+    --o-size: 6px;
+    --o-size-half: calc(var(--o-size) / 2);
+    --o-size-neg: calc(var(--o-size) * -1);
+    --o-size-neg-half: calc(var(--o-size-neg) / 2);
+
+    box-shadow: 
+        var(--o-size-neg-half) var(--o-size-neg-half) var(--o-size-half) hsl(0, 0%, 100%, 0.8),
+        var(--o-size-neg) var(--o-size-neg) var(--o-size-half) hsl(0, 0%, 0%, 0.8),
+        calc(var(--o-size-neg) / 2) calc(var(--o-size) / 2) var(--o-size-half) hsl(0, 0%, 50%, 0.8),
+        calc(var(--o-size) / 2) calc(var(--o-size-neg) / 2) var(--o-size-half) hsl(0, 0%, 50%, 0.8);
+    outline: 6px solid hsl(0, 0%, 50%, 0.4);
+    border-radius: var(--o-size-half);
+}
