@@ -15,7 +15,7 @@ import type { SizePx } from '$src/types';
 import { randomInRange } from '$utils/rand/randomInRange';
 import { generateBezierFromSketch } from '$utils/generateBezierFromSketch';
 import { getObjPropOrCreate } from '$utils/getObjPropOrCreate';
-import { guiEventGuiBuilt, guiEventEmitter, addListenerGuiEventBrushTilesetChanged } from '$lib/gui/event';
+import { guiEventGuiBuilt, guiEventEmitter, addListenerGuiEventBrushTilesetChanged, addListenerGuiEventTileSelectionWindowToggled } from '$lib/gui/event';
 import { toggleButtonToggledOnColorConf } from '$lib/gui/preset';
 import { map } from '$utils/map';
 import { make } from '$lib/gui/make';
@@ -53,7 +53,12 @@ function makeTileButton(actions: ActionMap): ButtonOrWrapped {
     const btnSelectTile = makeToggleButton(["button-tile"]);
     guiEventEmitter.addListener(guiEventGuiBuilt, () => initTileButtonLogic(btnSelectTile));
 
-    addEventListenerToggleButtonToggled(btnSelectTile, (_, toggleState) => toggleTileSelectionWindow(actions, toggleState));
+    addEventListenerToggleButtonToggled(btnSelectTile, (_, toggleState) => toggleTileSelectionWindow(actions, toggleState, btnSelectTile));
+    // please dont explode be for this abomination I just wanna finish this thing!! :3
+    addListenerGuiEventTileSelectionWindowToggled((toggleState, causedBy) => {
+        if (causedBy !== btnSelectTile)
+            setToggleButtonToggle(btnSelectTile, toggleState);
+    });
 
     return hotkeifyButtonWithLabel(btnSelectTile, 'T');
 }
@@ -204,13 +209,12 @@ function initTileButtonLogic(btn: HTMLButtonElement) {
     requestAnimationFrame(draw);
 }
 
-function makeTileDisplayScreen(tileButton: HTMLElement) {
+function makeTileDisplayScreen(actions: ActionMap) {
     const el = make(`<img draggable="false" class="tile-screen">`) as HTMLImageElement;
     addListenerGuiEventBrushTilesetChanged(newTileset => el.src = newTileset.imageUrl);
     addListenerGuiEventBrushTilesetChanged(newTileset => el.src = newTileset.imageUrl);
     el.addEventListener('click', () => {
-        if (!isTilesetSelectionWindowOpen())
-            tileButton.click();
+        toggleTileSelectionWindow(actions, !isTilesetSelectionWindowOpen(), el);
     });
 
     return el;
@@ -247,8 +251,6 @@ export function makeTopToolbarEl(actions: ActionMap): HTMLElement {
     bindExclusiveSelectionToToggleButtons(toolButtons.map(unwrapButton));
 
 
-    const tileButton = makeTileButton(actions);
-
     toolbar.append(
         makeButtonSection('reload', [
             makeReloadButton(actions)
@@ -257,8 +259,8 @@ export function makeTopToolbarEl(actions: ActionMap): HTMLElement {
             toolButtons
         ),
         makeButtonSection('tile-select', [
-            tileButton,
-            makeTileDisplayScreen(tileButton)
+            makeTileButton(actions),
+            makeTileDisplayScreen(actions)
         ])
     );
 

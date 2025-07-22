@@ -25,3 +25,11 @@ export function emitGuiEventBrushTilesetChanged(newTileset: Spritesheet): void {
 export function addListenerGuiEventBrushTilesetChanged(cb: (newTileset: Spritesheet) => void): void {
     guiEventEmitter.addListener(guiEventBrushTilesetChanged, cb);
 }
+
+export const guiEventTileSelectionWindowToggled = "tile-selection-window-toggled";
+export function emitGuiEventTileSelectionWindowToggled(toggleState: boolean, causedBy?: HTMLElement): void {
+    guiEventEmitter.emit(guiEventTileSelectionWindowToggled, toggleState, causedBy);
+}
+export function addListenerGuiEventTileSelectionWindowToggled(cb: (toggleState: boolean, causedBy?: HTMLElement) => void): void {
+    guiEventEmitter.addListener(guiEventTileSelectionWindowToggled, cb);
+}

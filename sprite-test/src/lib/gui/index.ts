@@ -20,7 +20,7 @@ export default function (canvas: HTMLCanvasElement, actions: ActionMap) {
     ]
 
     // create it on start so it can catch some useful events, but keep it hidden
-    toggleTileSelectionWindow(actions, false);
+    toggleTileSelectionWindow(actions, false, undefined);
 
     canvas.parentElement!.append(...toolbars);
 

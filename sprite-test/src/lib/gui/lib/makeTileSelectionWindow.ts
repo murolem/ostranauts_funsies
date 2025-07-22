@@ -1,6 +1,6 @@
 import { bindExclusiveSelectionToToggleButtons, makeToggleButton } from '$lib/gui/buttons/toggleButton';
 import { makeContainer } from '$lib/gui/containers/container';
-import { guiEventEmitter, guiEventInitialTilesetSet, guiEventSpritesheetsLoaded } from '$lib/gui/event';
+import { emitGuiEventTileSelectionWindowToggled, guiEventEmitter, guiEventInitialTilesetSet, guiEventSpritesheetsLoaded } from '$lib/gui/event';
 import { make } from '$lib/gui/make';
 import type { ActionMap } from '$lib/gui/types';
 import { Spritesheet, type SpritesheetMetadata } from '$lib/Spritesheet';
@@ -48,7 +48,26 @@ function makeAndAppendTileSelectionWindow(): void {
 
     const container = makeContainer(["tile-selection-window"]);
 
-    const header = make(`<div class="header">TILE SELECTION</div>`);
+    const header = make(`<div class="header"></div>`);
+
+    const headerText = make(`<span class="header-text">TILE SELECTION</span>`);
+
+    const windowCloseButton = make(`<button class="close-button no-make-style"></button>`) as HTMLButtonElement;
+    for (let i = 0; i < 3; i++) {
+        windowCloseButton.append(
+            make(`<span class="chevron"></span>`)
+        );
+    };
+    windowCloseButton.addEventListener('click', () => {
+        toggleTileSelectionWindow(actionMap!, false, windowCloseButton);
+    });
+
+
+
+    header.append(
+        headerText,
+        windowCloseButton
+    )
 
 
     const sidebar = make(`<div class="sidebar"></div>`);
@@ -131,7 +150,7 @@ function makeAndAppendTileSelectionWindow(): void {
     document.body.append(container);
 }
 
-export function toggleTileSelectionWindow(actions: ActionMap, toggleState: boolean): void {
+export function toggleTileSelectionWindow(actions: ActionMap, toggleState: boolean, causedBy?: HTMLElement): void {
     let isFirstTimeToggling = false;
 
     if (!tileSelectionWindow) {
@@ -145,6 +164,8 @@ export function toggleTileSelectionWindow(actions: ActionMap, toggleState: boole
             tileSelectionWindow!.classList.add(tileSelectionWindowClassActive);
         else
             tileSelectionWindow!.classList.remove(tileSelectionWindowClassActive);
+
+        emitGuiEventTileSelectionWindowToggled(toggleState, causedBy);
     }
 
     // add a small delay so that when the element is first added, the animation on class addition plays
