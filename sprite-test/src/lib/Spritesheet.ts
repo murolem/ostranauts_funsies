@@ -8,6 +8,7 @@ import { convertIndexToXyPosition } from '$src/lib/converters';
 import type { GridTile } from '$lib/Grid';
 import { Tiling, tilingToSsIndexMap } from '$lib/mappings';
 import { pickRandomItem } from '$utils/rand/pickRandomItem';
+import { createEventEmitter, EventEmitterVariant } from '$src/event';
 const logger = new Logger("lib/spritesheets");
 const { logFatal } = logger;
 
@@ -39,46 +40,57 @@ export type SpritesheetMetadata = {
     relPath: string
 }
 
+export const eventSpritesheet = createEventEmitter({
+    loaded:
+        new EventEmitterVariant<{
+            spritesheet: Spritesheet,
+            image: ImageBitmap,
+            imageUrl: string
+        }>()
+});
+
+/**
+ * A class for handling spritesheet images.
+ * 
+ * Creating a new spritesheet instance does NOT load the spritesheet. Call {@link Spritesheet.load} first.
+*/
 export class Spritesheet {
     get name() { return this._name; }
-
-    get image() { return this._image; }
+    private set name(value) { this._name = value; }
+    _name: string;
 
     get imageUrl() { return this._imageUrl; }
+    private set imageUrl(value) { this.imageUrl = value; }
+    _imageUrl: string;
 
     /**
-     * @param _name
-     * @param _image 
-     * @param _imageUrl 
-     */
-    constructor(
-        private _name: SsName,
-        private _image: ImageBitmap,
-        private _imageUrl: string
-    ) { }
+     * Whether the spritesheet has finished loading.
+    */
+    get isLoaded() { return this._isLoaded; }
+    private set isLoaded(value) { this._isLoaded = value; }
+    _isLoaded: boolean = false;
 
-    isEqual(other: Spritesheet): boolean {
-        return this.imageUrl === other.imageUrl;
+    get image() { return this._image; }
+    _image: ImageBitmap | null = null;
+
+    /**
+     * Creates a new spritesheet instance. Call {@link load} to load the actual spritesheet first.
+     * @param name
+     * @param imageUrl 
+    */
+    constructor(name: SsName, imageUrl: string) {
+        this._name = name;
+        this._imageUrl = imageUrl;
     }
 
-    /** 
-     * Loads a random default spritesheet.
+    /**
+     * Loads multiple spritesheets.
+     * @param spritesheets 
     */
-    static async loadRandomCoreTileset(): Promise<Spritesheet> {
-        const ssMeta = pickRandomItem(ssMetadata);
-        const ssUrlRelPath = `${spritesheetsUrlDirpath}/${ssMeta.relPath}`;
-        return await this.loadTileset(ssUrlRelPath, ssMeta.ssName);
-    }
-
-    /** 
-     * Loads all default spritesheets.
-    */
-    static async loadCoreTilesets(): Promise<Spritesheet[]> {
+    static async loadAll(spritesheets: Spritesheet[]): Promise<Spritesheet[]> {
         const promises: Promise<any>[] = [];
-        for (const ssMeta of ssMetadata) {
-            const relFilepath = `${spritesheetsUrlDirpath}/${ssMeta.relPath}`;
-
-            const promise = this.loadTileset(relFilepath, ssMeta.ssName);
+        for (const ss of spritesheets) {
+            const promise = ss.load();
             promises.push(promise);
 
             await wait(25);
@@ -87,43 +99,82 @@ export class Spritesheet {
         return await Promise.all(promises);
     }
 
+    /** 
+     * Returns a random core tileset.
+    */
+    static getRandomCoreTileset(): Spritesheet {
+        const ssMeta = pickRandomItem(ssMetadata);
+        const ssUrlRelPath = `${spritesheetsUrlDirpath}/${ssMeta.relPath}`;
+        return new Spritesheet(ssMeta.ssName, ssUrlRelPath);
+    }
+
+    /** 
+     * Returns all core tilesets.
+    */
+    static getAllCoreTilesets(): Spritesheet[] {
+        return ssMetadata.map(meta => new Spritesheet(meta.ssName, `${spritesheetsUrlDirpath}/${meta.relPath}`));
+    }
+
+    /** Converts a map of neighboring tiles into a tiling configuration for a tile at the center. */
+    static convertCardinalNeighborsToTiling(cardinalNeighbors: Record<CardinalDirection, GridTile>): TilingConfiguration {
+        let res: TilingConfiguration = Tiling.none;
+        for (const [dirUntyped, neighborTile] of Object.entries(cardinalNeighbors)) {
+            const dir = dirUntyped as keyof typeof cardinalNeighbors;
+            if (neighborTile !== undefined)
+                res |= Tiling[dir];
+        }
+
+        return res;
+    }
+
+    isEqual(other: Spritesheet): boolean {
+        return this.imageUrl === other.imageUrl;
+    }
+
     /**
-     * Loads a spritesheet from a url under specified name.
-     * @param url 
-     * @param name 
-     */
-    static async loadTileset(url: string, name: string): Promise<Spritesheet> {
-        return await fetch(url)
+     * Loads the spritesheet.
+     * @returns this.
+    */
+    async load(): Promise<this> {
+        if (this.isLoaded) {
+            console.warn(this);
+            console.warn("attempting to load an already loaded spritesheet: (see above)");
+            return this;
+        }
+
+        const tilesetImg = await fetch(this.imageUrl)
             .then(res => res.blob())
             .then(createImageBitmap)
-            .then(bitmap => {
-                const ss = new Spritesheet(
-                    name,
-                    bitmap,
-                    url
-                );
-
-                return ss;
-            })
             .catch(err => {
                 logFatal({
                     msg: "error while loading a spritesheet",
                     throw: true,
                     data: {
-                        url,
-                        name,
+                        ss: this,
+                        imageUrl: this.imageUrl,
+                        name: this.name,
                         error: err
                     }
                 });
                 throw ''//type guard
             });
+
+        this._image = tilesetImg;
+        this._isLoaded = true;
+        eventSpritesheet.loaded.emit(this, {
+            spritesheet: this,
+            image: this.image!,
+            imageUrl: this.imageUrl
+        });
+
+        return this;
     }
 
     /**
      * Converts spritesheet tile index to a a tile position within the spritesheet.
      * @param ssIndex 
      * @returns 
-     */
+    */
     convertSsIndexToTilePosition(ssIndex: SsTileIndex): TilePosition {
         this.assertSsIndexWithinSpritesheet(ssIndex);
 
@@ -133,7 +184,7 @@ export class Spritesheet {
     /**
      * Given a tiling configuration, find a matching tile and returns its region within the spritesheet.
      * @param ssIndex 
-     */
+    */
     calculateSpritesheetTileRegion(tiling: TilingConfiguration): Region {
         const ssIndex = tilingToSsIndexMap[tiling];
         const tilePos = this.convertSsIndexToSsTilePosition(ssIndex);
@@ -144,18 +195,6 @@ export class Spritesheet {
             w: baseTileSizePx,
             h: baseTileSizePx
         }
-    }
-
-    /** Converts a map of neighboring tiles into a tiling configuration for a tile at the center. */
-    convertCardinalNeighborsToTiling(cardinalNeighbors: Record<CardinalDirection, GridTile>): TilingConfiguration {
-        let res: TilingConfiguration = Tiling.none;
-        for (const [dirUntyped, neighborTile] of Object.entries(cardinalNeighbors)) {
-            const dir = dirUntyped as keyof typeof cardinalNeighbors;
-            if (neighborTile !== undefined)
-                res |= Tiling[dir];
-        }
-
-        return res;
     }
 
     /** Convert spreadsheet tile index to a tile position (NOT pixel position) within the spreadsheet. */
@@ -178,5 +217,10 @@ export class Spritesheet {
     assertSsIndexWithinSpritesheet(ssIndex: SsTileIndex): void {
         if (!this.isSsIndexWithinSpritesheet(ssIndex))
             throw new Error("failed assert assertSsIndexWithinSpritesheet: " + ssIndex);
+    }
+
+    private assertLoaded(msg?: string): void {
+        if (!this.isLoaded)
+            throw new Error(msg ?? "failed assert assertLoaded");
     }
 }

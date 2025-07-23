@@ -1,11 +1,10 @@
 import { ssIndexToTilingMap } from '$src/lib/mappings';
 import { throwIfNullishPassthrough } from '$utils/throwIfNullishPassthrough';
-import { ssSizeTilesTotal } from '$preset';
+import { event, ssSizeTilesTotal, store } from '$preset';
 import { Grid } from '$src/lib/Grid';
 import { TileBrush } from '$src/lib/TileBrush';
 import { Spritesheet } from '$src/lib/Spritesheet';
 import createGUI from '$lib/gui';
-import { emitGuiEventBrushTilesetChanged, emitGuiEventInitialTilesetSet, emitGuiEventSpritesheetsLoaded } from '$lib/gui/event';
 
 if (Object.keys(ssIndexToTilingMap).length !== ssSizeTilesTotal)
     throw new Error(`mismatch between configuring spritesheet size and tiles and defined mappings: ss size set to ${ssSizeTilesTotal} tiles, while index mappings configured for ${Object.keys(ssIndexToTilingMap).length} tiles`);
@@ -15,16 +14,18 @@ if (Object.keys(ssIndexToTilingMap).length !== ssSizeTilesTotal)
 const canvas = throwIfNullishPassthrough(document.getElementById('canvas'), "canvas element not found") as HTMLCanvasElement;
 if (canvas.tagName !== 'CANVAS')
     throw new Error("canvas element is not a canvas element, found: " + canvas.tagName);
+store.canvas.set(canvas);
 
 const ctx = canvas.getContext('2d')!; // !explicit assertion; asserted next line
 if (!ctx)
     throw new Error("2d rendering context unsupported");
 
-const randomCoreSs = await Spritesheet.loadRandomCoreTileset();
-const spritesheetsPromise = Spritesheet.loadCoreTilesets();
+const randomCoreSs = await Spritesheet.getRandomCoreTileset().load();
+const allCoreSpritesheetsPromise = Spritesheet.loadAll(Spritesheet.getAllCoreTilesets());
 const grid = new Grid(canvas, ctx);
+store.grid.set(grid);
 const brush = new TileBrush(grid, randomCoreSs);
-// const brush = new TileBrush(grid, spritesheets.find(ss => ss.filename === "ItmWallThin1x1YellowSheet.png")!);
+store.brush.set(brush);
 
 // =====
 
@@ -41,16 +42,12 @@ canvas.addEventListener('mousemove', (e) => {
     offsetMousePos.y = e.offsetY;
 });
 
-createGUI(canvas, {
-    reload: trigger => { grid.clear(); },
-    selectTool: (trigger, tool) => { brush.setMode(tool) },
-    selectTileset: (trigger, tileset) => { brush.setTileset(tileset) },
-});
+createGUI();
 
-emitGuiEventInitialTilesetSet(brush.tileset);
-emitGuiEventBrushTilesetChanged(brush.tileset);
-spritesheetsPromise
-    .then(spritesheets => emitGuiEventSpritesheetsLoaded(spritesheets));
+// event.gui.first_tileset_set.emit(brush, { tileset: brush.tileset });
+// emitGuiEventBrushTilesetChanged(brush.tileset);
+allCoreSpritesheetsPromise
+    .then(spritesheets => event.gui.core_tilesets_loaded__persisting.emit('index', { tilesets: spritesheets }));
 
 function draw() {
     ctx.save();

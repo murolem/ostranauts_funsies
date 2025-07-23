@@ -6,7 +6,7 @@ import trashBinIconBlack from '$src/icons/trash-bin-black.png';
 import paintBrushIconBlack from '$src/icons/paint-brush-black.png';
 import eraserIconBlack from '$src/icons/eraser-black.png';
 import { makeButtonSection } from '$lib/gui/containers/buttonSection';
-import { bindExclusiveSelectionToToggleButtons, makeToggleButton, addEventListenerToggleButtonToggled, setToggleButtonToggle } from '$lib/gui/buttons/toggleButton';
+import { bindExclusiveSelectionToToggleButtons, makeToggleButton, onToggleButtonToggle, toggleButton } from '$lib/gui/buttons/toggleButton';
 import type { HotkeyKey } from '$lib/keybinds';
 import { hotkeifyButtonWithLabel } from '$lib/gui/lib/utils/hotkeifyButtonWithLabel';
 import type { TileBrushMode } from '$lib/TileBrush';
@@ -15,13 +15,14 @@ import type { SizePx } from '$src/types';
 import { randomInRange } from '$utils/rand/randomInRange';
 import { generateBezierFromSketch } from '$utils/generateBezierFromSketch';
 import { getObjPropOrCreate } from '$utils/getObjPropOrCreate';
-import { guiEventGuiBuilt, guiEventEmitter, addListenerGuiEventBrushTilesetChanged, addListenerGuiEventTileSelectionWindowToggled } from '$lib/gui/event';
 import { toggleButtonToggledOnColorConf } from '$lib/gui/preset';
 import { map } from '$utils/map';
 import { make } from '$lib/gui/make';
 import { isTilesetSelectionWindowOpen, toggleTileSelectionWindow } from '$lib/gui/lib/makeTileSelectionWindow';
+import { getElementClientSizeWithPad } from '$lib/gui/lib/utils/getElementClientSizeWithPad';
+import { event } from '$src/event';
 
-function makeReloadButton(actions: ActionMap): ButtonOrWrapped {
+function makeReloadButton(): ButtonOrWrapped {
     const btnReload = makeSimpleButton();
     btnReload.appendChild(makeIcon(trashBinIconBlack, { invert: true }));
     btnReload.addEventListener('click', (e) => actions.reload?.(e.target as HTMLElement));
@@ -31,14 +32,14 @@ function makeReloadButton(actions: ActionMap): ButtonOrWrapped {
 }
 
 function makeToolButton(
-    actions: ActionMap,
+    ,
     tool: TileBrushMode,
     hotkey: HotkeyKey,
     contents: HTMLElement,
 ): ButtonOrWrapped {
     const btn = makeToggleButton(["tool-" + tool]);
     btn.appendChild(contents);
-    addEventListenerToggleButtonToggled(btn, (_, toggleState) => {
+    onToggleButtonToggle(btn, (_, toggleState) => {
         if (toggleState)
             actions.selectTool(btn, tool)
     })
@@ -49,15 +50,17 @@ function makeToolButton(
 /**
  * do not even ask me what this is OvO
  */
-function makeTileButton(actions: ActionMap): ButtonOrWrapped {
+function makeTileButton(): ButtonOrWrapped {
     const btnSelectTile = makeToggleButton(["button-tile"]);
-    guiEventEmitter.addListener(guiEventGuiBuilt, () => initTileButtonLogic(btnSelectTile));
+    event.gui.gui_built__persisting.on(() => initTileButtonLogic(btnSelectTile));
 
-    addEventListenerToggleButtonToggled(btnSelectTile, (_, toggleState) => toggleTileSelectionWindow(actions, toggleState, btnSelectTile));
-    // please dont explode be for this abomination I just wanna finish this thing!! :3
-    addListenerGuiEventTileSelectionWindowToggled((toggleState, causedBy) => {
-        if (causedBy !== btnSelectTile)
-            setToggleButtonToggle(btnSelectTile, toggleState);
+    onToggleButtonToggle(btnSelectTile, (_, toggleState) => toggleTileSelectionWindow(btnSelectTile, toggleState));
+    // handle external openings of tile selection window.
+    event.gui.tile_window.toggled.on(({ toggleState }, source) => {
+        if (source === btnSelectTile)
+            return;
+
+        toggleButton(btnSelectTile, toggleState);
     });
 
     return hotkeifyButtonWithLabel(btnSelectTile, 'T');
@@ -72,14 +75,9 @@ function initTileButtonLogic(btn: HTMLButtonElement) {
 
     const canvas = document.createElement('canvas');
 
-    const btnCompStyle = getComputedStyle(btn);
+    const btnClientSizeWithPad = getElementClientSizeWithPad(btn);
 
-    const clientSizeNoPad: SizePx = {
-        w: btn.clientWidth + parseFloat(btnCompStyle.paddingLeft) + parseFloat(btnCompStyle.paddingRight),
-        h: btn.clientHeight + parseFloat(btnCompStyle.paddingTop) + parseFloat(btnCompStyle.paddingBottom)
-    }
-
-    const pixelSize = Math.floor(Math.min(clientSizeNoPad.w, clientSizeNoPad.h) / pixelsPerSide);
+    const pixelSize = Math.floor(Math.min(btnClientSizeWithPad.w, btnClientSizeWithPad.h) / pixelsPerSide);
 
     canvas.width = pixelSize * pixelsPerSide;
     canvas.height = pixelSize * pixelsPerSide;
@@ -87,7 +85,7 @@ function initTileButtonLogic(btn: HTMLButtonElement) {
 
     let useColor = false;
 
-    addEventListenerToggleButtonToggled(btn, (_, toggleState) => {
+    onToggleButtonToggle(btn, (_, toggleState) => {
         useColor = toggleState;
     })
 
@@ -209,7 +207,7 @@ function initTileButtonLogic(btn: HTMLButtonElement) {
     requestAnimationFrame(draw);
 }
 
-function makeTileDisplayScreen(actions: ActionMap) {
+function makeTileDisplayScreen() {
     const el = make(`<img draggable="false" class="tile-screen">`) as HTMLImageElement;
     addListenerGuiEventBrushTilesetChanged(newTileset => el.src = newTileset.imageUrl);
     addListenerGuiEventBrushTilesetChanged(newTileset => el.src = newTileset.imageUrl);
@@ -227,7 +225,7 @@ function makeTileDisplayScreen(actions: ActionMap) {
     // }
 }
 
-export function makeTopToolbarEl(actions: ActionMap): HTMLElement {
+export function makeTopToolbarEl(): HTMLElement {
     const toolbar = makeContainer(["gui-container", "dock-top"]);
 
     const brushToolButton = makeToolButton(
@@ -236,7 +234,7 @@ export function makeTopToolbarEl(actions: ActionMap): HTMLElement {
         'B',
         makeIcon(paintBrushIconBlack, { invert: true }),
     );
-    setToggleButtonToggle(unwrapButton(brushToolButton), true);
+    toggleButton(unwrapButton(brushToolButton), true);
 
     const toolButtons = [
         brushToolButton,

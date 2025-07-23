@@ -1,3 +1,9 @@
+import type { Grid } from '$lib/Grid';
+import type { TileWindow } from '$lib/gui/lib/makeTileSelectionWindow';
+import type { Spritesheet } from '$lib/Spritesheet';
+import type { TileBrush } from '$lib/TileBrush';
+import { createEventEmitter, EventEmitterVariant } from '$src/event';
+import { createStoreMap, ValueStore, type StoreMap } from '$src/store';
 import type { SizeTiles } from '$src/types';
 
 // =========================
@@ -25,6 +31,7 @@ export const spritesheetMetadataFilename = "metadata.json";
 // ===== END VARIABLES =====
 // =========================
 
+
 // ==============================
 // ======= AUTO VARIABLES =======
 // ==============================
@@ -32,7 +39,61 @@ export const spritesheetMetadataFilename = "metadata.json";
 export const ssSizeTilesTotal = ssSizeTiles.w * ssSizeTiles.h;
 export const tileScaledSizePx = baseTileSizePx * tileScalingFactor;
 
-
 // ==============================
 // ===== END AUTO VARIABLES =====
 // ==============================
+
+
+// =====================
+// ======= STORE =======
+// =====================
+
+export const store = createStoreMap({
+    canvas: new ValueStore<HTMLCanvasElement>(),
+    grid: new ValueStore<Grid>(),
+    brush: new ValueStore<TileBrush>(),
+    tileWindow: new ValueStore<TileWindow>()
+});
+
+// =====================
+// ===== EMD STORE =====
+// =====================
+
+
+// ======================
+// ======= EVENTS =======
+// ======================
+
+export const event = createEventEmitter({
+    gui: {
+        gui_built__persisting:
+            new EventEmitterVariant<undefined>({ persistEvents: true }),
+
+        first_tileset_set__persisting:
+            new EventEmitterVariant<{
+                tileset: Spritesheet
+            }>({ persistEvents: true }),
+
+        core_tilesets_loaded__persisting:
+            new EventEmitterVariant<{
+                tilesets: Spritesheet[]
+            }>({ persistEvents: true }),
+
+        selected_tileset_changed:
+            new EventEmitterVariant<{
+                oldTileset: Spritesheet[]
+                newTileset: Spritesheet[]
+            }>(),
+
+        // tile_window: {
+        //     toggled:
+        //         new EventEmitterVariant<{
+        //             toggleState: boolean
+        //         }>()
+        // },
+    }
+});
+
+// ======================
+// ===== END EVENTS =====
+// ======================

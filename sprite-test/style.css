@@ -5,7 +5,12 @@
 :root {
     /* PROPS SET FROM SCRIPT START */
     --btn-press-anim-duration: 0ms;
+
     --toggle-col: gray;
+
+    /* tsw = Tile Selection Window; exp = Explorer  */
+    /* contains the width for the explorer. this value is set once is width is populated with elements; it's then used to keep the explorer the same width when changing views. */
+    --tsw-exp-calculated-width: 0px;
     /* PROPS SET FROM SCRIPT END */
 
     --tileset-base-size: 64px;
@@ -278,8 +283,7 @@ button:not(.no-make-style) {
     grid-area: sidebar;
 
     display: grid;
-    /* grid-template-columns: 7rem; */
-    /* grid-auto-rows: auto 2rem; */
+    grid-template-rows: auto min-content;
     grid-template-areas:
         "sidebar-folders"
         "sidebar-upload";
@@ -325,16 +329,11 @@ button:not(.no-make-style) {
 .tile-selection-window > .sidebar > .sidebar-upload {
     grid-area: sidebar-upload;
 
-    visibility: hidden;
-
     border-top: var(--border);
-    
-    display: flex;
-    justify-content: center;
-    align-items: center;
 
-    width: 100%;
     aspect-ratio: 1;
+    width: 100%;
+    height: auto;
 
     font-size: large;
     font-weight: bold;
@@ -347,6 +346,17 @@ button:not(.no-make-style) {
     }
 }
 
+.sidebar-upload label {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    height: 100%;
+} 
+
+.sidebar-upload input {
+    display: none;
+} 
 
 .tile-selection-window > .explorer {
     grid-area: explorer;
@@ -356,6 +366,7 @@ button:not(.no-make-style) {
     gap: 2rem;
 
     height: 30rem;
+    min-width: var(--tsw-exp-calculated-width);
     overflow: auto;
 
     padding: 1rem;

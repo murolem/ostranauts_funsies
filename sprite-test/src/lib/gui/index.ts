@@ -1,28 +1,25 @@
 
 import { buttonPressAnimationDurationMs, toggleButtonToggledOnColorConf } from '$lib/gui/preset';
-import type { ActionMap } from '$lib/gui/types';
 import { makeTopToolbarEl } from '$lib/gui/lib/makeTopToolbar';
-import { emitGuiEventGuiBuilt } from '$lib/gui/event';
-import { toggleTileSelectionWindow } from '$lib/gui/lib/makeTileSelectionWindow';
+import { makeTileSelectionWindow } from '$lib/gui/lib/makeTileSelectionWindow';
+import { event, store } from '$preset';
+import { setRootElProperty } from '$lib/gui/lib/utils/setRootElProperty';
 
 function applyRootStyles() {
-    const rootEl = document.querySelector(':root') as HTMLHtmlElement;
-    rootEl.style.setProperty("--btn-press-anim-duration", buttonPressAnimationDurationMs + "ms");
+    setRootElProperty("--btn-press-anim-duration", buttonPressAnimationDurationMs + "ms");
     let c = toggleButtonToggledOnColorConf;
-    rootEl.style.setProperty("--toggle-col", `hsl(${c.h}, ${c.s}%, ${c.l}%)`);
+    setRootElProperty("--toggle-col", `hsl(${c.h}, ${c.s}%, ${c.l}%)`);
 }
 
-export default function (canvas: HTMLCanvasElement, actions: ActionMap) {
+export default function () {
     applyRootStyles();
 
     const toolbars: HTMLElement[] = [
-        makeTopToolbarEl(actions)
+        makeTopToolbarEl()
     ]
+    store.canvas.get().parentElement!.append(...toolbars);
 
-    // create it on start so it can catch some useful events, but keep it hidden
-    toggleTileSelectionWindow(actions, false, undefined);
+    makeTileSelectionWindow();
 
-    canvas.parentElement!.append(...toolbars);
-
-    emitGuiEventGuiBuilt();
+    event.gui.gui_built__persisting.emit('gui');
 }
