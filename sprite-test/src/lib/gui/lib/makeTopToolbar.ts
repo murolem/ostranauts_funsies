@@ -204,6 +204,8 @@ function initTileButtonLogic(btn: HTMLButtonElement) {
 
 function makeTileDisplayScreen() {
     const imgEl = make(`<img draggable="false" class="tile-screen">`) as HTMLImageElement;
+    imgEl.src = store.initialSpritesheet.get().imageUrl;
+
     eventBrush.tilesetChanged.on(e => {
         imgEl.src = e.newTileset.imageUrl;
     });

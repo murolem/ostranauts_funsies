@@ -57,21 +57,21 @@ export const eventSpritesheet = createEventEmitter({
 export class Spritesheet {
     get name() { return this._name; }
     private set name(value) { this._name = value; }
-    _name: string;
+    private _name: string;
 
     get imageUrl() { return this._imageUrl; }
     private set imageUrl(value) { this.imageUrl = value; }
-    _imageUrl: string;
+    private _imageUrl: string;
 
     /**
      * Whether the spritesheet has finished loading.
     */
     get isLoaded() { return this._isLoaded; }
     private set isLoaded(value) { this._isLoaded = value; }
-    _isLoaded: boolean = false;
+    private _isLoaded: boolean = false;
 
     get image() { return this._image; }
-    _image: ImageBitmap | null = null;
+    private _image: ImageBitmap | null = null;
 
     /**
      * Creates a new spritesheet instance. Call {@link load} to load the actual spritesheet first.
