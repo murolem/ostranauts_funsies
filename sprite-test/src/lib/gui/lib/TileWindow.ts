@@ -179,6 +179,13 @@ export class TileWindow {
                 element: this.makeTilesetCard(tileset)
             })
         }
+
+        Togglable.bindTogglablesToExclusiveToggleOnState(
+            this._tilesetsByViews[view].map(e => e.element),
+            {
+                keepOneToggled: true
+            }
+        );
     }
 
     /**

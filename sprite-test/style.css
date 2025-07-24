@@ -397,7 +397,7 @@ button:not(.no-make-style) {
         outline-offset 200ms ease-out;
     }
     
-    &.selected {
+    &.toggled {
         transition: outline 0ms, outline-offset 0ms;
         outline: var(--border);
         outline-offset: 5px;

@@ -1,5 +1,5 @@
-import { make } from '$lib/gui/make';
 import { createEventEmitter, EventEmitterVariant } from '$src/event';
+import { v4 as uuidv4 } from 'uuid';
 
 const toggleClass = "toggled";
 export type CausedBy = string | Element | HTMLElement | Exclude<object, null>;
@@ -18,6 +18,11 @@ export const eventTogglable = createEventEmitter({
         togglable: Togglable,
         toggleState: boolean,
         causedBy: CausedBy
+    }>(),
+
+    exclusiveSelectionBindCreated: new EventEmitterVariant<{
+        bindingId: string,
+        boundElements: Set<HTMLElement>
     }>()
 });
 
@@ -68,6 +73,9 @@ export class Togglable {
     /**
      * Binds multiple togglable elements together, 
      * making it only possible to toggle on one element at a time.
+     * 
+     * Calling this function an already bound element will remove previous binding from it and all bound elements.
+     * All elements in previous binding will be toggled off, even if {@link keepOneToggled} is enabled.
      * @param collection Togglables to bind.
      * @param toggleOn 
      */
@@ -80,6 +88,8 @@ export class Togglable {
             /** 
              * If enabled, at least one element will remain toggled on (after initial toggle on).
              * Toggling on another bound element will work, but toggling off the same element will not.
+             * 
+             * This option is ignored when overriding a binding on an element.
              * @default false */
             keepOneToggled: boolean,
 
@@ -97,17 +107,17 @@ export class Togglable {
         //     ? collection.map(el => Togglable.attach(el as HTMLElement))
         //     : collection as Togglable[];
 
+        const bindingId = uuidv4();
+
         const elementsSet = collection[0] instanceof HTMLElement
             ? new Set(collection as HTMLElement[])
             : new Set(collection.map(togglable => (togglable as Togglable).element))
 
         let activeElement: HTMLElement | null = null;
 
-        eventTogglable.toggle.on((e) => {
+        const toggleListener: Parameters<typeof eventTogglable.toggle.on>[0] = e => {
             if (!elementsSet.has(e.element))
                 return;
-
-            // debugger;
 
             if (e.toggleState) {
                 // element toggled on
@@ -137,6 +147,29 @@ export class Togglable {
 
                 activeElement = e.element;
             }
+        }
+
+        const bindingListener: Parameters<typeof eventTogglable.exclusiveSelectionBindCreated.on>[0] = e => {
+            if (e.bindingId === bindingId)
+                return;
+            else if (![...e.boundElements].some(el => elementsSet.has(el)))
+                return;
+
+            // remove binding listeners
+            eventTogglable.toggle.off(toggleListener);
+            eventTogglable.exclusiveSelectionBindCreated.off(bindingListener);
+
+            // untoggle active element, if any
+            if (activeElement)
+                Togglable.with(activeElement).toggleOff("binding override");
+        }
+
+        eventTogglable.toggle.on(toggleListener);
+        eventTogglable.exclusiveSelectionBindCreated.on(bindingListener);
+
+        eventTogglable.exclusiveSelectionBindCreated.emit(elementsSet, {
+            bindingId,
+            boundElements: elementsSet
         });
 
         if (toggleOn) {
