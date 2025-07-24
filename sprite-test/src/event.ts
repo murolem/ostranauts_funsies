@@ -60,7 +60,7 @@ export class EventEmitterVariant<TData extends object | undefined = undefined> {
     emit(source: unknown, ...data: (TData extends undefined ? [undefined?] : [TData])): void {
         this.assertEmitterSet();
 
-        this._baseEventEmitter!.emit(this.eventName, source, data);
+        this._baseEventEmitter!.emit(this.eventName, ...data);
         if (this.opts.persistEvents)
             this._persistingEmits.push({ source, data: data as any }) //! use any assertion because of the magic fuckery used for this function arguments
     }
@@ -103,11 +103,13 @@ export class EventEmitterVariant<TData extends object | undefined = undefined> {
 const configureEventMapEmitters = (eventMap: EventMap, baseEventEmitter: EventEmitter3) => {
     function traverse(obj: object, pathSegments: string[]): void {
         for (const [key, value] of Object.entries(obj)) {
+            const pathSegmentsInner = [...pathSegments, key];
+
             if (value instanceof EventEmitterVariant) {
-                value._setEventName(pathSegments.join("."));
+                value._setEventName(pathSegmentsInner.join("."));
                 value._setBaseEventEmitter(baseEventEmitter);
             } else {
-                traverse(value, [...pathSegments, key])
+                traverse(value, pathSegmentsInner);
             }
         }
     }

@@ -46,7 +46,7 @@ export const eventSpritesheet = createEventEmitter({
             spritesheet: Spritesheet,
             image: ImageBitmap,
             imageUrl: string
-        }>()
+        }>({ persistEvents: true })
 });
 
 /**
@@ -115,7 +115,7 @@ export class Spritesheet {
         return ssMetadata.map(meta => new Spritesheet(meta.ssName, `${spritesheetsUrlDirpath}/${meta.relPath}`));
     }
 
-    /** Converts a map of neighboring tiles into a tiling configuration for a tile at the center. */
+    /** Converts a map of neighboring tiles into a tiling configuration for tile in between. */
     static convertCardinalNeighborsToTiling(cardinalNeighbors: Record<CardinalDirection, GridTile>): TilingConfiguration {
         let res: TilingConfiguration = Tiling.none;
         for (const [dirUntyped, neighborTile] of Object.entries(cardinalNeighbors)) {

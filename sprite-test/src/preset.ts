@@ -1,6 +1,6 @@
 import type { Grid } from '$lib/Grid';
-import type { TileWindow } from '$lib/gui/lib/makeTileSelectionWindow';
-import type { Spritesheet } from '$lib/Spritesheet';
+import type { TileWindow } from '$lib/gui/lib/TileWindow';
+import { Spritesheet } from '$lib/Spritesheet';
 import type { TileBrush } from '$lib/TileBrush';
 import { createEventEmitter, EventEmitterVariant } from '$src/event';
 import { createStoreMap, ValueStore, type StoreMap } from '$src/store';
@@ -52,7 +52,9 @@ export const store = createStoreMap({
     canvas: new ValueStore<HTMLCanvasElement>(),
     grid: new ValueStore<Grid>(),
     brush: new ValueStore<TileBrush>(),
-    tileWindow: new ValueStore<TileWindow>()
+    tileWindow: new ValueStore<TileWindow>(),
+    initialSpritesheet: new ValueStore<Spritesheet>(),
+    coreSpritesheets: new ValueStore<Spritesheet[]>()
 });
 
 // =====================
@@ -68,29 +70,6 @@ export const event = createEventEmitter({
     gui: {
         gui_built__persisting:
             new EventEmitterVariant<undefined>({ persistEvents: true }),
-
-        first_tileset_set__persisting:
-            new EventEmitterVariant<{
-                tileset: Spritesheet
-            }>({ persistEvents: true }),
-
-        core_tilesets_loaded__persisting:
-            new EventEmitterVariant<{
-                tilesets: Spritesheet[]
-            }>({ persistEvents: true }),
-
-        selected_tileset_changed:
-            new EventEmitterVariant<{
-                oldTileset: Spritesheet[]
-                newTileset: Spritesheet[]
-            }>(),
-
-        // tile_window: {
-        //     toggled:
-        //         new EventEmitterVariant<{
-        //             toggleState: boolean
-        //         }>()
-        // },
     }
 });
 

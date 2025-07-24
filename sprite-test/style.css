@@ -213,12 +213,12 @@ button:not(.no-make-style) {
 
     transition: transform 150ms ease;
 
-    &:not(.active) {
+    &:not(.toggled) {
         transform: translateX(100%);
         right: calc(var(--tile-selection-win-right-offset-with-shadow) * -1);
         /* visibility: hidden; */
     }
-    &.active {
+    &.toggled {
         right: var(--tile-selection-win-right-offset);
     }
 }

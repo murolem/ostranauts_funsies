@@ -51,7 +51,7 @@ export class ValueStore<T extends any> {
      */
     get(): T {
         if (!this.hasValue)
-            throw new Error("store error: value is not assigned");
+            throw new Error("store get() error: no value");
 
         return this.value as T;
     }

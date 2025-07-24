@@ -21,10 +21,16 @@ if (!ctx)
     throw new Error("2d rendering context unsupported");
 
 const randomCoreSs = await Spritesheet.getRandomCoreTileset().load();
-const allCoreSpritesheetsPromise = Spritesheet.loadAll(Spritesheet.getAllCoreTilesets());
+store.initialSpritesheet.set(randomCoreSs);
+
+const coreSpritesheets = Spritesheet.getAllCoreTilesets();
+store.coreSpritesheets.set(coreSpritesheets);
+Spritesheet.loadAll(coreSpritesheets);
+
 const grid = new Grid(canvas, ctx);
 store.grid.set(grid);
-const brush = new TileBrush(grid, randomCoreSs);
+
+const brush = new TileBrush(randomCoreSs);
 store.brush.set(brush);
 
 // =====
@@ -43,11 +49,6 @@ canvas.addEventListener('mousemove', (e) => {
 });
 
 createGUI();
-
-// event.gui.first_tileset_set.emit(brush, { tileset: brush.tileset });
-// emitGuiEventBrushTilesetChanged(brush.tileset);
-allCoreSpritesheetsPromise
-    .then(spritesheets => event.gui.core_tilesets_loaded__persisting.emit('index', { tilesets: spritesheets }));
 
 function draw() {
     ctx.save();

@@ -1,31 +1,40 @@
-import { emitGuiEventBrushTilesetChanged } from '$lib/gui/event';
-import type { Grid, GridTile } from '$src/lib/Grid';
+import { store } from '$preset';
+import { createEventEmitter, EventEmitterVariant } from '$src/event';
+import type { GridTile } from '$src/lib/Grid';
 import { cardinalDirectionsToOffsetsMap } from '$src/lib/mappings';
-import type { Spritesheet } from '$src/lib/Spritesheet';
+import { Spritesheet } from '$src/lib/Spritesheet';
 import type { CardinalDirection, TilePosition } from '$src/types';
 
 export type TileBrushMode =
     "brush"
     | "eraser";
 
+export const eventBrush = createEventEmitter({
+    tilesetChanged: new EventEmitterVariant<{
+        oldTileset: Spritesheet,
+        newTileset: Spritesheet
+    }>()
+})
+
 export class TileBrush {
     get tileset() { return this._tileset; }
+    _tileset: Spritesheet;
 
+    private grid = store.grid.get();
     private mode: TileBrushMode = 'brush';
 
     /**
      * 
-     * @param _grid Grid to attach the brush to.
      * @param _tileset A tileset to use initially with the brush.
      */
-    constructor(
-        private _grid: Grid,
-        private _tileset: Spritesheet
-    ) { }
+    constructor(tileset: Spritesheet) {
+        this._tileset = tileset;
+    }
 
     setTileset(tileset: Spritesheet): void {
+        const oldTileset = this.tileset;
         this._tileset = tileset;
-        emitGuiEventBrushTilesetChanged(tileset);
+        eventBrush.tilesetChanged.emit(this, { oldTileset, newTileset: tileset });
     }
 
     setMode(mode: TileBrushMode) {
@@ -33,13 +42,16 @@ export class TileBrush {
     }
 
     tryApplyAt(tilePos: TilePosition): void {
-        if (!this._grid.isTilePositionWithinGrid(tilePos))
+        if (!this.grid.isTilePositionWithinGrid(tilePos))
             return;
 
-        const cardinalNeighbors = this._grid.getCardinalNeighbors(tilePos);
+        const cardinalNeighbors = this.grid.getCardinalNeighbors(tilePos);
 
         switch (this.mode) {
             case 'brush':
+                if (!this._tileset.isLoaded)
+                    return;
+
                 this.applyBrushMode(tilePos, cardinalNeighbors);
                 break;
             case 'eraser':
@@ -62,24 +74,24 @@ export class TileBrush {
                 y: tilePos.y + offset.y,
             }
 
-            const neighborCardinalNeighbors = this._grid.getCardinalNeighbors(neighborTilePos);
-            const neighborTiling = this._tileset.convertCardinalNeighborsToTiling(neighborCardinalNeighbors);
-            this._grid.set(neighborTilePos, { ss: neighborTile.ss, tiling: neighborTiling });
+            const neighborCardinalNeighbors = this.grid.getCardinalNeighbors(neighborTilePos);
+            const neighborTiling = Spritesheet.convertCardinalNeighborsToTiling(neighborCardinalNeighbors);
+            this.grid.set(neighborTilePos, { ss: neighborTile.ss, tiling: neighborTiling });
         }
     }
 
     private applyBrushMode(tilePos: TilePosition, cardinalNeighbors: Record<CardinalDirection, GridTile>) {
         // update us
-        const tiling = this._tileset.convertCardinalNeighborsToTiling(cardinalNeighbors);
-        this._grid.set(tilePos, { ss: this.tileset, tiling: tiling });
+        const tiling = Spritesheet.convertCardinalNeighborsToTiling(cardinalNeighbors);
+        this.grid.set(tilePos, { ss: this.tileset, tiling: tiling });
     }
 
     private applyEraserMode(tilePos: TilePosition) {
         // if tile doesn't exist drawn do nothing
-        if (!this._grid.hasAt(tilePos))
+        if (!this.grid.hasAt(tilePos))
             return;
 
         // update us
-        this._grid.set(tilePos, undefined);
+        this.grid.set(tilePos, undefined);
     }
 }

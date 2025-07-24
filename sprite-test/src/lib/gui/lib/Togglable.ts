@@ -2,7 +2,7 @@ import { make } from '$lib/gui/make';
 import { createEventEmitter, EventEmitterVariant } from '$src/event';
 
 const toggleClass = "toggled";
-export type CausedBy = "string" | Element | HTMLElement | Exclude<object, null>;
+export type CausedBy = string | Element | HTMLElement | Exclude<object, null>;
 // export type CausedBy = unknown;
 export type TogglableOptions = {
     /** 
@@ -21,10 +21,6 @@ export const eventTogglable = createEventEmitter({
     }>()
 });
 
-type ExclusiveSelectionBinding = {
-    toggledOnTogglable: Togglable | null,
-    boundTogglables: Set<Togglable>
-}
 /**
  * Contains thingies to make an element togglable, creating a toggle state. 
  * 
@@ -34,7 +30,7 @@ export class Togglable {
     private options: TogglableOptions;
 
     /**
-     * Creates a new togglable instance, attaching to the given element.
+     * Creates a new togglable instance, attaching to the given element. Many togglables for the same element can exist at once.
      * @param element Element to attach to.
      * @param options Options.
      */
@@ -44,7 +40,7 @@ export class Togglable {
         }
 
         if (this.options.toggleOnClick)
-            element.addEventListener('click', () => this.toggle(element));
+            element.addEventListener('click', () => this.invertToggle(this));
     }
 
     /**
@@ -72,72 +68,83 @@ export class Togglable {
     /**
      * Binds multiple togglable elements together, 
      * making it only possible to toggle on one element at a time.
-     * @param togglables Togglables to bind.
+     * @param collection Togglables to bind.
      * @param toggleOn 
      */
     static bindTogglablesToExclusiveToggleOnState(
-        togglables: Togglable[],
+        collection: HTMLElement[] | Togglable[],
         {
-            ensureOneToggledOn = false,
+            keepOneToggled = false,
             toggleOn = null
         }: Partial<{
             /** 
              * If enabled, at least one element will remain toggled on (after initial toggle on).
              * Toggling on another bound element will work, but toggling off the same element will not.
              * @default false */
-            ensureOneToggledOn: boolean,
+            keepOneToggled: boolean,
 
             /**
              * Togglable to toggle on after the binding.
              * @default null
              */
-            toggleOn: Togglable | null
+            toggleOn: Togglable | HTMLElement | null
         }> = {}
     ): void {
-        const binding: ExclusiveSelectionBinding = {
-            boundTogglables: new Set(togglables),
-            toggledOnTogglable: null
-        }
+        if (collection.length === 0)
+            return;
 
-        eventTogglable.toggle.on(({ togglable, causedBy, toggleState }) => {
-            if (!binding.boundTogglables.has(togglable))
+        // const togglables: Togglable[] = collection[0] instanceof HTMLElement
+        //     ? collection.map(el => Togglable.attach(el as HTMLElement))
+        //     : collection as Togglable[];
+
+        const elementsSet = collection[0] instanceof HTMLElement
+            ? new Set(collection as HTMLElement[])
+            : new Set(collection.map(togglable => (togglable as Togglable).element))
+
+        let activeElement: HTMLElement | null = null;
+
+        eventTogglable.toggle.on((e) => {
+            if (!elementsSet.has(e.element))
                 return;
 
-            if (toggleState) {
+            // debugger;
+
+            if (e.toggleState) {
                 // element toggled on
 
-                // should not happen since binding can only have that value and the same togglable when toggling it off
-                if (togglable === binding.toggledOnTogglable)
-                    throw new Error("failed to process exclusive selection binding for togglable: illegal state");
+                // could happen externally, so do nothing ig
+                if (e.element === activeElement)
+                    return;
+
+                // change active element
+                const previousActiveElement = activeElement;
+                activeElement = e.element;
 
                 // toggle off selected, if any
-                if (binding.toggledOnTogglable) {
-                    binding.toggledOnTogglable.toggleOff(causedBy);
-                    binding.toggledOnTogglable = null;
-                }
-
-                // select new
-                togglable.toggleOn(causedBy);
-                binding.toggledOnTogglable = togglable;
+                if (previousActiveElement)
+                    Togglable.with(previousActiveElement).toggleOff(e.causedBy);
             } else {
                 // element toggled off
 
-                if (ensureOneToggledOn && togglable === binding.toggledOnTogglable) {
-                    // ensure is enabled; cannot toggle off the only element
+                // could happen externally, so do nothing ig too 
+                if (e.element !== activeElement)
+                    return;
+
+                if (keepOneToggled) {
+                    Togglable.with(e.element).toggleOn('e.causedBy');
                     return;
                 }
 
-
-                // toggle off selected, if any
-                if (binding.toggledOnTogglable) {
-                    binding.toggledOnTogglable.toggleOff(causedBy);
-                    binding.toggledOnTogglable = null;
-                }
+                activeElement = e.element;
             }
         });
 
-        if (toggleOn)
-            toggleOn.toggleOn(binding);
+        if (toggleOn) {
+            if (toggleOn instanceof HTMLElement)
+                toggleOn = Togglable.with(toggleOn);
+
+            toggleOn.toggleOn(this);
+        }
     }
 
     /** Checks whether the element is toggled on or off. */
@@ -145,28 +152,33 @@ export class Togglable {
         return this.element.classList.contains(toggleClass);
     }
 
+    isEqual(other: Togglable) {
+        return this.element === other.element;
+    }
+
     /**
      * Inverts element's toggle state.
      * @param causedBy 
      * @returns 
      */
-    toggle(causedBy: CausedBy): void;
+    invertToggle(causedBy: CausedBy): void {
+        this.toggleTo(!this.toggleState, causedBy);
+    }
+
     /**
      * Toggles the element on or off. Does nothing if the element is already in that state.
      * @param toggleState 
      * @param causedBy 
      * @returns 
      */
-    toggle(toggleState: boolean, causedBy: CausedBy): void;
-    toggle(arg1: CausedBy | boolean, arg2?: CausedBy): void {
-        let toggleState: boolean;
-        let causedBy: CausedBy;
-        if (typeof arg1 === 'boolean') {
-            toggleState = arg1;
-            causedBy = arg2!;
+    toggleTo(toggleState: boolean, causedBy: CausedBy): void {
+        if (this.toggleState === toggleState)
+            return;
+
+        if (toggleState) {
+            this.element.classList.add(toggleClass);
         } else {
-            causedBy = arg1;
-            toggleState = !this.toggleState;
+            this.element.classList.remove(toggleClass);
         }
 
         eventTogglable.toggle.emit(causedBy, {
@@ -181,13 +193,30 @@ export class Togglable {
      * Shorthand for `toggle(true)`.
      */
     toggleOn(causedBy: CausedBy): void {
-        this.toggle(true, causedBy);
+        this.toggleTo(true, causedBy);
     }
 
     /**
      * Shorthand for `toggle(false)`.
      */
     toggleOff(causedBy: CausedBy): void {
-        this.toggle(false, causedBy);
+        this.toggleTo(false, causedBy);
+    }
+
+    /**
+     * Binds with another togglable, syncing toggle state between the element, i.e. toggling one element
+     * to the same state when another is toggled, and vice versa.
+     * @param otherTogglable Other togglable
+     */
+    bindAutosyncWith(otherTogglable: Togglable): void {
+        eventTogglable.toggle.on(e => {
+            // toggle other element when this one is toggled, but not when it's caused by other one (through the binding toggle)
+            if (e.element === this.element && e.causedBy !== otherTogglable.element)
+                otherTogglable.toggleTo(e.toggleState, e.element);
+            // same here, but inverted
+            else if (e.element === otherTogglable.element && e.causedBy !== this.element) {
+                this.toggleTo(e.toggleState, e.element);
+            }
+        });
     }
 }

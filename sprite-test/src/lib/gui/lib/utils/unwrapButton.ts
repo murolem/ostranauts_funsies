@@ -7,8 +7,7 @@ import type { ButtonOrWrapped } from '$lib/gui/types';
 export function unwrapButton(btn: ButtonOrWrapped): HTMLButtonElement {
     if (btn.tagName === 'BUTTON')
         return btn as HTMLButtonElement;
-
-    if (btn.tagName === "LABEL") {
+    else if (btn.tagName === "LABEL") {
         return btn.querySelector(":scope > button") as HTMLButtonElement;
     }
 

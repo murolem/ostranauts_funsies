@@ -237,8 +237,8 @@ x             x
         for (let [gridIndexStr, tileConfiguration] of Object.entries(this._grid)) {
             // skip undefined tiles.
             // shouldn't happen but still checking.
-            // todo check if actually happens
-            if (tileConfiguration === undefined)
+            // todo check if first actually happens
+            if (tileConfiguration === undefined || tileConfiguration.ss.image === null)
                 continue;
 
             const gridIndex = parseInt(gridIndexStr);
@@ -259,7 +259,6 @@ x             x
                 ctx.scale(1 - clearProgressT, 1 - clearProgressT);
             }
 
-            // console.log("drawing region: " + JSON.stringify(ssRegionToDraw))
             ctx.drawImage(
                 tileConfiguration.ss.image,
                 ssRegionToDraw.x, ssRegionToDraw.y, ssRegionToDraw.w, ssRegionToDraw.h,
