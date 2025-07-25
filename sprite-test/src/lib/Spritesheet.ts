@@ -1,7 +1,6 @@
-import { baseTileSizePx, spritesheetsUrlDirpath, ssSizeTiles, ssSizeTilesTotal } from '$preset';
+import { baseTileSizePx, spritesheetsUrlDirpath, ssSizePx, ssSizeTiles, ssSizeTilesTotal } from '$preset';
 import ssMetadataUntyped from '$src/data/ss_metadata.json';
 import type { CardinalDirection, Position, Region, TilePosition } from '$src/types';
-import path from 'path-browserify-esm';
 import { wait } from '$utils/wait';
 import { Logger } from '$logger';
 import { convertIndexToXyPosition } from '$src/lib/converters';
@@ -9,8 +8,9 @@ import type { GridTile } from '$lib/Grid';
 import { Tiling, tilingToSsIndexMap } from '$lib/mappings';
 import { pickRandomItem } from '$utils/rand/pickRandomItem';
 import { createEventEmitter, EventEmitterVariant } from '$src/event';
+import { Notification } from '$lib/gui/notifications/Notification';
 const logger = new Logger("lib/spritesheets");
-const { logFatal } = logger;
+const { logError, logFatal } = logger;
 
 const ssMetadata = ssMetadataUntyped as SpritesheetMetadata[];
 
@@ -128,7 +128,8 @@ export class Spritesheet {
     }
 
     isEqual(other: Spritesheet): boolean {
-        return this.imageUrl === other.imageUrl;
+        return this.imageUrl === other.imageUrl
+            && this.name === other.name;
     }
 
     /**
@@ -146,9 +147,13 @@ export class Spritesheet {
             .then(res => res.blob())
             .then(createImageBitmap)
             .catch(err => {
-                logFatal({
+                new Notification('error',
+                    "Failed to load a spritesheet",
+                    `Encountered an error while loading: ${err.toString()}`
+                ).dispatch();
+
+                logError({
                     msg: "error while loading a spritesheet",
-                    throw: true,
                     data: {
                         ss: this,
                         imageUrl: this.imageUrl,
@@ -156,8 +161,20 @@ export class Spritesheet {
                         error: err
                     }
                 });
-                throw ''//type guard
             });
+
+        if (!tilesetImg)
+            return this;
+
+        if (tilesetImg.width !== ssSizePx.w
+            || tilesetImg.height !== ssSizePx.h
+        ) {
+            new Notification('error',
+                "Failed to load a spritesheet",
+                `Wrong spritesheet size: expected ${ssSizePx.w}x${ssSizePx.h}px, got ${tilesetImg.width}x${tilesetImg.height}px.`
+            ).dispatch()
+            return this;
+        }
 
         this._image = tilesetImg;
         this._isLoaded = true;
@@ -168,6 +185,15 @@ export class Spritesheet {
         });
 
         return this;
+    }
+
+    /**
+     * Updates image url, requiring reloading the spritesheet.
+     */
+    setImageUrl(newImageUrl: string): void {
+        this._image = null;
+        this._imageUrl = newImageUrl;
+        this._isLoaded = false;
     }
 
     /**

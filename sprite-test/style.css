@@ -338,6 +338,11 @@ button:not(.no-make-style) {
     font-size: large;
     font-weight: bold;
 
+    & * {
+        user-select: none;
+        cursor: pointer;
+    }
+
     & .bracket {
         user-select: none;
         font-size: x-large;
@@ -380,6 +385,7 @@ button:not(.no-make-style) {
     align-items: center;
     gap: 0.5rem;
 
+    height: fit-content;
     max-width: 12rem;
 
     outline: 1px dashed transparent;
@@ -459,4 +465,93 @@ button:not(.no-make-style) {
         calc(var(--o-size) / 2) calc(var(--o-size-neg) / 2) var(--o-size-half) hsl(0, 0%, 50%, 0.8);
     outline: 6px solid hsl(0, 0%, 50%, 0.4);
     border-radius: var(--o-size-half);
+}
+
+.notification-queue {
+    --notifqueue-margin: 1rem;
+
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 1000;
+    
+    display: flex;
+    flex-direction: column;
+    
+    width: 20rem;
+    margin: var(--notifqueue-margin);
+
+    pointer-events: none;
+}
+
+.notification {
+    /* @SET IN SCRIPT@ */
+    --notif-duration-ms: 0ms;
+    --notif-removal-duration-ms: 0ms;
+    /* @SET IN SCRIPT END@ */
+
+    &.info { --bg-col: hsl(220, 50%, 40%); }
+    &.warning { --bg-col: hsl(45, 50%, 40%); }
+    &.error { --bg-col: hsl(0, 50%, 40%); }
+
+    pointer-events: all;
+
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+
+    position: relative;
+    width: 100%;
+    height: fit-content;
+    padding: 0.5rem 1rem;
+    border-radius: 2px;
+
+    background-color: var(--bg-col);
+    border: 3px solid color-mix(in srgb, var(--bg-col), black 50%);
+
+    transition: transform var(--notif-removal-duration-ms) ease-out;
+
+    &.removing,
+    &.initial {
+        transform: translateX(calc(-1 * (100% + var(--notifqueue-margin))));
+
+        transition: transform 100ms ease-in;
+    }
+}
+
+.notification-progress {
+    --notif-progress-transition: width var(--notif-duration-ms) linear;
+
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: .25rem;
+
+    background-color: color-mix(in srgb, var(--bg-col), white 50%);
+    
+    width: 100%;
+
+    transition: 
+        var(--notif-progress-transition),
+        opacity 500ms ease-in;
+    
+    &.initial {
+        width: 0%;
+    }
+
+    &.no-auto-dismiss {
+        width: 0px;
+        opacity: 0;
+    }   
+}
+
+.notification-header {
+    font-family: 'Jura';
+    font-size: x-large;
+    font-weight: bold;
+}
+
+.notification-content {
+    font-family: 'Comme';
 }

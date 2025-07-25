@@ -62,7 +62,7 @@ export class EventEmitterVariant<TData extends object | undefined = undefined> {
 
         this._baseEventEmitter!.emit(this.eventName, ...data);
         if (this.opts.persistEvents)
-            this._persistingEmits.push({ source, data: data as any }) //! use any assertion because of the magic fuckery used for this function arguments
+            this._persistingEmits.push({ source, data: data[0] as any }) //! use any assertion because of the magic fuckery used for this function arguments
     }
 
     on(cb: EventCb<TData>): void {

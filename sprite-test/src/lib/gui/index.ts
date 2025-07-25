@@ -3,7 +3,7 @@ import { buttonPressAnimationDurationMs, toggleButtonToggledOnColorConf } from '
 import { makeTopToolbarEl } from '$lib/gui/lib/makeTopToolbar';
 import { event, store } from '$preset';
 import { setRootElProperty } from '$lib/gui/lib/utils/setRootElProperty';
-import { TileWindow } from '$lib/gui/lib/TileWindow';
+import { TileWindow } from '$lib/gui/windows/TileWindow';
 
 function applyRootStyles() {
     setRootElProperty("--btn-press-anim-duration", buttonPressAnimationDurationMs + "ms");

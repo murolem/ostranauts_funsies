@@ -1,10 +1,12 @@
 import { ssIndexToTilingMap } from '$src/lib/mappings';
 import { throwIfNullishPassthrough } from '$utils/throwIfNullishPassthrough';
-import { event, ssSizeTilesTotal, store } from '$preset';
+import { ssSizeTilesTotal, store } from '$preset';
 import { Grid } from '$src/lib/Grid';
 import { TileBrush } from '$src/lib/TileBrush';
 import { Spritesheet } from '$src/lib/Spritesheet';
 import createGUI from '$lib/gui';
+import { NotificationQueue } from '$lib/gui/notifications/NotificationQueue';
+
 
 if (Object.keys(ssIndexToTilingMap).length !== ssSizeTilesTotal)
     throw new Error(`mismatch between configuring spritesheet size and tiles and defined mappings: ss size set to ${ssSizeTilesTotal} tiles, while index mappings configured for ${Object.keys(ssIndexToTilingMap).length} tiles`);
@@ -19,6 +21,8 @@ store.canvas.set(canvas);
 const ctx = canvas.getContext('2d')!; // !explicit assertion; asserted next line
 if (!ctx)
     throw new Error("2d rendering context unsupported");
+
+new NotificationQueue();
 
 const randomCoreSs = await Spritesheet.getRandomCoreTileset().load();
 store.initialSpritesheet.set(randomCoreSs);

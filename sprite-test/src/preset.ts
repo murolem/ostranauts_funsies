@@ -1,10 +1,11 @@
 import type { Grid } from '$lib/Grid';
-import type { TileWindow } from '$lib/gui/lib/TileWindow';
+import { NotificationQueue } from '$lib/gui/notifications/NotificationQueue';
+import type { TileWindow } from '$lib/gui/windows/TileWindow';
 import { Spritesheet } from '$lib/Spritesheet';
 import type { TileBrush } from '$lib/TileBrush';
 import { createEventEmitter, EventEmitterVariant } from '$src/event';
 import { createStoreMap, ValueStore, type StoreMap } from '$src/store';
-import type { SizeTiles } from '$src/types';
+import type { SizePx, SizeTiles } from '$src/types';
 
 // =========================
 // ======= VARIABLES =======
@@ -36,8 +37,15 @@ export const spritesheetMetadataFilename = "metadata.json";
 // ======= AUTO VARIABLES =======
 // ==============================
 
+/** Tileset area in tiles. */
 export const ssSizeTilesTotal = ssSizeTiles.w * ssSizeTiles.h;
+/** Scaled size of a tileset. */
 export const tileScaledSizePx = baseTileSizePx * tileScalingFactor;
+/** Tileset size in pixels. */
+export const ssSizePx: SizePx = Object.freeze({
+    w: ssSizeTiles.w * baseTileSizePx,
+    h: ssSizeTiles.h * baseTileSizePx,
+});
 
 // ==============================
 // ===== END AUTO VARIABLES =====
@@ -54,7 +62,8 @@ export const store = createStoreMap({
     brush: new ValueStore<TileBrush>(),
     tileWindow: new ValueStore<TileWindow>(),
     initialSpritesheet: new ValueStore<Spritesheet>(),
-    coreSpritesheets: new ValueStore<Spritesheet[]>()
+    coreSpritesheets: new ValueStore<Spritesheet[]>(),
+    notificationQueue: new ValueStore<NotificationQueue>()
 });
 
 // =====================
